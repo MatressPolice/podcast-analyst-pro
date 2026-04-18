@@ -11,6 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build
+        env:
+          VITE_TADDY_API_KEY: '${{ secrets.VITE_TADDY_API_KEY }}'
+          VITE_TADDY_USER_ID: '${{ secrets.VITE_TADDY_USER_ID }}'
+          VITE_ASSEMBLYAI_URL: '${{ secrets.VITE_ASSEMBLYAI_URL }}'
+          VITE_GOOGLE_AI_STUDIO_API_KEY: '${{ secrets.VITE_GOOGLE_AI_STUDIO_API_KEY }}'
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
