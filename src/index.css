@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base resets ─────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-surface-cream text-ink font-ui;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-editorial;
+  }
+
+  /* Subtle custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-container;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-muted;
+  }
+}
+
+/* ─── Component layer ──────────────────────────────── */
+@layer components {
+  /* UI label style: Work Sans, all-caps, tracked */
+  .label-ui {
+    @apply font-ui text-xs font-medium uppercase tracking-ui text-ink-muted;
+  }
+
+  /* Editorial eyebrow above headings */
+  .eyebrow {
+    @apply label-ui mb-1;
+  }
+
+  /* Tonal card — no border, subtle bg shift */
+  .card-tonal {
+    @apply bg-surface-container rounded-lg p-4 transition-shadow duration-200 hover:shadow-sm;
+  }
+
+  /* Primary action button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-lg bg-sage-primary px-4 py-2
+           font-ui text-sm font-medium text-white tracking-ui
+           transition-all duration-200 hover:bg-sage-deep active:scale-[0.98];
+  }
+
+  /* Ghost / outline button */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-lg px-4 py-2
+           font-ui text-sm font-medium text-ink-secondary
+           transition-all duration-200 hover:bg-surface-container active:scale-[0.98];
+  }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2.5
+           font-ui text-sm font-medium text-ink-secondary
+           transition-all duration-150 cursor-pointer
+           hover:bg-surface-container hover:text-ink;
+  }
+
+  .nav-item.active {
+    @apply bg-sage-primary/10 text-sage-primary;
+  }
+
+  /* Shimmer skeleton — used by SkeletonCard */
+  .skeleton {
+    @apply bg-surface-border;
+    background-image: linear-gradient(
+      90deg,
+      theme('colors.surface.border') 0%,
+      theme('colors.surface.container') 50%,
+      theme('colors.surface.border') 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+/* Keyframe lives outside @layer so it isn't purged */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.episode-panel {
+  animation: slide-in-right 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* View transition inside the panel: subtle rightward fade on enter */
+@keyframes panel-view-enter {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+.panel-view {
+  animation: panel-view-enter 0.18s ease-out;
+}
