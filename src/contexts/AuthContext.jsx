@@ -19,9 +19,16 @@ export function AuthProvider({ children }) {
   // onAuthStateChanged fires immediately with null before Firebase finishes
   // processing the redirect — this gate stops that null from clearing loading.
   const redirectSettled = useRef(false)
+  const authStateSettled = useRef(false)
+
+  const evaluateLoading = () => {
+    if (redirectSettled.current && authStateSettled.current) {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    // 1. Resolve any pending redirect first, THEN allow loading to clear.
+    // 1. Resolve any pending redirect first
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
@@ -32,20 +39,17 @@ export function AuthProvider({ children }) {
         console.error('[Auth] Redirect result error:', err)
       })
       .finally(() => {
-        // Redirect is settled — future onAuthStateChanged calls may clear loading.
         redirectSettled.current = true
-        // If onAuthStateChanged already fired (it usually does), clear loading now.
-        setLoading(false)
+        evaluateLoading()
       })
 
-    // 2. Keep auth state in sync for the session lifetime.
+    // 2. Keep auth state in sync for the session lifetime
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser)
       setAuthorized(isAuthorizedUser(firebaseUser))
 
-      if (redirectSettled.current) {
-        setLoading(false)
-      }
+      authStateSettled.current = true
+      evaluateLoading()
     })
 
     return unsubscribe

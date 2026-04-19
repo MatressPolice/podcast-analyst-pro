@@ -10,9 +10,14 @@ export const AUTHORIZED_UID = import.meta.env.VITE_AUTHORIZED_UID
 export function isAuthorizedUser(user) {
   if (!user) return false
 
-  // Primary check: UID match — .trim() guards against stray spaces in .env.local
-  const envUid = (AUTHORIZED_UID ?? '').trim()
-  if (envUid && user.uid.trim() === envUid) return true
+  const envUidRaw = import.meta.env.VITE_AUTHORIZED_UID || ''
+  const safeEnvUid = envUidRaw.trim().toLowerCase()
+  const safeUserUid = user.uid.trim().toLowerCase()
+
+  console.log('Live UID:', user.uid)
+  console.log('Secret UID from Env:', envUidRaw)
+
+  if (safeEnvUid && safeUserUid === safeEnvUid) return true
 
   // Fallback: email domain check (nssm account)
   if (user.email && user.email.toLowerCase().startsWith('mikes')) return true
