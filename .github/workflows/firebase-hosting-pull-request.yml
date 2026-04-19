@@ -8,21 +8,23 @@ jobs:
   build_and_preview:
     if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build
         env:
-          VITE_TADDY_API_KEY: '${{ secrets.VITE_TADDY_API_KEY }}'
-          VITE_TADDY_USER_ID: '${{ secrets.VITE_TADDY_USER_ID }}'
-          VITE_ASSEMBLY_AI_API_KEY: '${{ secrets.VITE_ASSEMBLY_AI_API_KEY }}'
-          VITE_GOOGLE_AI_STUDIO_API_KEY: '${{ secrets.VITE_GOOGLE_AI_STUDIO_API_KEY }}'
-          VITE_FIREBASE_API_KEY: '${{ secrets.VITE_FIREBASE_API_KEY }}'
-          VITE_FIREBASE_AUTH_DOMAIN: '${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}'
-          VITE_FIREBASE_PROJECT_ID: '${{ secrets.VITE_FIREBASE_PROJECT_ID }}'
-          VITE_FIREBASE_STORAGE_BUCKET: '${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}'
-          VITE_FIREBASE_MESSAGING_SENDER_ID: '${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}'
-          VITE_FIREBASE_APP_ID: '${{ secrets.VITE_FIREBASE_APP_ID }}'
-          VITE_AUTHORIZED_UID: '${{ secrets.VITE_AUTHORIZED_UID }}'
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_AUTHORIZED_UID: ${{ secrets.VITE_AUTHORIZED_UID }}
+          VITE_TADDY_API_KEY: ${{ secrets.VITE_TADDY_API_KEY }}
+          VITE_TADDY_USER_ID: ${{ secrets.VITE_TADDY_USER_ID }}
+          VITE_ASSEMBLY_AI_API_KEY: ${{ secrets.VITE_ASSEMBLY_AI_API_KEY }}
+          VITE_GOOGLE_AI_STUDIO_API_KEY: ${{ secrets.VITE_GOOGLE_AI_STUDIO_API_KEY }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
