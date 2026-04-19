@@ -45,6 +45,18 @@ export function AuthProvider({ children }) {
 
     // 2. Keep auth state in sync for the session lifetime
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      // NUCLEAR DIAGNOSTIC LOGS
+      if (firebaseUser) {
+        const envUidRaw = import.meta.env.VITE_AUTHORIZED_UID || 'UNDEFINED_OR_EMPTY'
+        console.log('--- NUCLEAR AUTH DIAGNOSTICS ---')
+        console.log('Live UID:', firebaseUser.uid)
+        console.log('Secret UID from Env:', envUidRaw)
+        console.log('--------------------------------')
+        
+        // Window alert is blocking, ensuring the user sees it before a redirect can fire
+        window.alert(`Nuclear Logs:\nLive UID: ${firebaseUser.uid}\nSecret UID: ${envUidRaw}`)
+      }
+
       setUser(firebaseUser)
       setAuthorized(isAuthorizedUser(firebaseUser))
 
