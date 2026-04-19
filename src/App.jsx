@@ -18,17 +18,6 @@ function ProtectedRoute({ children }) {
     )
   }
 
-  // Hard diagnostic check to see if the environment variable even made it into the Vite build
-  if (!import.meta.env.VITE_AUTHORIZED_UID) {
-    return (
-      <div className="p-8 text-red-600 bg-red-50 min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Configuration Error</h1>
-        <p>The VITE_AUTHORIZED_UID environment variable is missing from the Vite build.</p>
-        <p>This means GitHub Actions did not successfully inject the secrets during compilation.</p>
-      </div>
-    )
-  }
-
   if (!user) return <Navigate to="/login" replace />
   if (!authorized) return <Navigate to="/unauthorized" replace />
   return children
