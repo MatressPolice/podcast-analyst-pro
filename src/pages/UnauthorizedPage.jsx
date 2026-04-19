@@ -13,9 +13,7 @@ export default function UnauthorizedPage() {
         <div>
           <h1 className="font-editorial text-2xl text-ink">Access Restricted</h1>
           <p className="mt-2 font-ui text-sm text-ink-muted leading-relaxed">
-            This workspace is private. The account{' '}
-            <span className="text-ink font-medium">{user?.email}</span>{' '}
-            is not authorized to view this application.
+            Access Denied: <span className="text-ink font-medium">{user?.email}</span> is not authorized.
           </p>
         </div>
         <button onClick={logOut} className="btn-ghost gap-2 mx-auto">
