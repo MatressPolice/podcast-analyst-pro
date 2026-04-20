@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   { to: '/',          icon: Library,    label: 'Library'  },
   { to: '/discover',  icon: Search,     label: 'Discover' },
   { to: '/archive',   icon: Archive,    label: 'Archive'  },
-  { to: '/saved',     icon: BookMarked, label: 'Saved'    },
   { to: '/settings',  icon: Settings,   label: 'Settings' },
 ]
 

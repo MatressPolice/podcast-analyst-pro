@@ -40,12 +40,22 @@
   - Persist `intelligenceBrief` field to the analysis document
   - Display rendered markdown in the Intelligence Brief section
 
-## Phase 5: The Archive
-- Task 5.1: Archive Page (repurposing the /archive route)
-  - Chronological history of all analyzed episodes
-  - Pull from `users/{uid}/analyses` collection, ordered by `createdAt` desc
-  - Card per analysis: podcast name, episode title, date, status badge
-  - Click card → reopens the Analyst Workspace for that episode
-- Task 5.2: Prompt Manager UI
-  - Create a Firestore collection for 'prompts'
-  - Create a UI component to select which prompt to use for a given analysis
+## Phase 5: The Intelligence Control Center
+- Task 5.1: The Intelligence Archive
+  - Chronological history of all generated briefs (auto-logged).
+  - Pull from `artifacts/${appId}/users/${user.uid}/analyses` ordered by date.
+  - Card per analysis: podcast name/artwork, episode title, release date, analysis date, status badge.
+  - Support background processing: users can start an analysis and leave the overlay safely.
+- Task 5.2: The Prompt Laboratory (Settings)
+  - Firebase collection: `prompts` mapped specifically to the user's private path.
+  - List of up to 3 prompts with Name, Active Toggle, and Edit.
+  - Active prompt remains the default for all future analyses until changed.
+- Task 5.3: The Command Console (Usage & Logs)
+  - A dashboard within Settings to monitor API usage and health.
+  - Track "Total Minutes Transcribed" and "Total Analysis Requests".
+  - Quick-link resources (Google AI Studio, AssemblyAI, Firebase, Taddy).
+  - Tier Info reference tables.
+  - Error Log section ("Black Box") with 7-day auto-deletion.
+- Task 5.4: Security & Multi-User Implementation
+  - VITE_AUTHORIZED_EMAILS environment variable manages active whitelist check.
+  - Complete data isolation explicitly binding firestore paths to user.uid.
