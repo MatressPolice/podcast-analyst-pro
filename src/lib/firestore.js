@@ -1,6 +1,6 @@
 // Firestore helpers — Task 2.4 (subscriptions) + Task 4.1 (analyses)
-// Subscription path: users/{uid}/subscriptions/{podcastUuid}
-// Analysis path:     users/{uid}/analyses/{episodeUuid}
+// Subscription path: artifacts/{appId}/users/{uid}/subscriptions/{podcastUuid}
+// Analysis path:     artifacts/{appId}/users/{uid}/analyses/{episodeUuid}
 import {
   collection,
   doc,
@@ -9,15 +9,20 @@ import {
   deleteDoc,
   onSnapshot,
   serverTimestamp,
+  query,
+  orderBy,
 } from 'firebase/firestore'
 import { db } from './firebase'
+
+// We use the project ID to maintain clean URLs for the unified "artifacts" root
+const APP_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'podcast-analyst-pro'
 
 /**
  * Returns a reference to the user's subscriptions sub-collection.
  * @param {string} uid - Firebase Auth UID
  */
 function subscriptionsRef(uid) {
-  return collection(db, 'users', uid, 'subscriptions')
+  return collection(db, 'artifacts', APP_ID, 'users', uid, 'subscriptions')
 }
 
 /**
@@ -80,11 +85,15 @@ export function listenToSubscriptions(uid, callback) {
 }
 
 // ── Analyses (Task 4.1) ───────────────────────────────────────────────────────
-// Path: users/{uid}/analyses/{episodeUuid}
+// Path: artifacts/{appId}/users/{uid}/analyses/{episodeUuid}
 // Status lifecycle: queued → processing → completed | error
 
 function analysisRef(uid, episodeUuid) {
-  return doc(db, 'users', uid, 'analyses', episodeUuid)
+  return doc(db, 'artifacts', APP_ID, 'users', uid, 'analyses', episodeUuid)
+}
+
+function analysesCollectionRef(uid) {
+  return collection(db, 'artifacts', APP_ID, 'users', uid, 'analyses')
 }
 
 /**
@@ -126,6 +135,34 @@ export function listenToAnalysis(uid, episodeUuid, callback) {
     (err) => {
       console.error('[Firestore] Analysis listener error:', err)
       callback(null)
+    }
+  )
+}
+
+/**
+ * Real-time listener for ALL analysis documents for a specific user.
+ * Ordered by creation date (newest first). Used mainly in the Archive page.
+ * Returns an unsubscribe function.
+ *
+ * @param {string}   uid
+ * @param {Function} callback — called with array of full analysis document objects
+ * @returns {() => void} unsubscribe
+ */
+export function listenToAllAnalyses(uid, callback) {
+  return onSnapshot(
+    analysesCollectionRef(uid),
+    (snapshot) => {
+      const results = snapshot.docs.map((d) => d.data())
+      results.sort((a, b) => {
+        const ta = a.createdAt?.seconds ?? 0
+        const tb = b.createdAt?.seconds ?? 0
+        return tb - ta
+      })
+      callback(results)
+    },
+    (err) => {
+      console.error('[Firestore] All Analyses listener error:', err)
+      callback([])
     }
   )
 }

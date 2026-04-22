@@ -4,7 +4,8 @@ import LoginPage from './pages/LoginPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 import LibraryPage from './pages/LibraryPage'
 import DiscoverPage from './pages/DiscoverPage'
-import { ArchivePage, SavedPage, SettingsPage } from './pages/StubPages'
+import ArchivePage from './pages/ArchivePage'
+import { SavedPage, SettingsPage } from './pages/StubPages'
 
 // ── Auth-aware route guard ────────────────────────────
 function ProtectedRoute({ children }) {

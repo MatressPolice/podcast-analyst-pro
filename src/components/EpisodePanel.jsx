@@ -194,7 +194,14 @@ function AnalysisView({ episode, podcast, user, onBack }) {
   const status = analysis?.status ?? null
 
   async function handleBeginAnalysis() {
-    await beginAnalysis(audioUrl, name, podcast.uuid)
+    await beginAnalysis(
+      audioUrl,
+      name,
+      podcast.uuid,
+      podcast.name,
+      podcast.imageUrl,
+      datePublished
+    )
   }
 
   // ── Derived UI state ──────────────────────────────────────────────────────

@@ -2,45 +2,30 @@
 import AppShell from '../components/AppShell'
 import Header from '../components/Header'
 
-function ComingSoonPage({ title, description }) {
+export function SavedPage() {
   return (
     <AppShell>
-      <Header title={title} />
-      <div className="flex-1 flex flex-col items-center justify-center px-8 py-24 text-center">
-        <p className="eyebrow mb-3">Coming Soon</p>
-        <h2 className="font-editorial text-3xl italic text-ink">{title}</h2>
-        <p className="mt-3 max-w-sm font-ui text-sm text-ink-muted leading-relaxed">
-          {description}
+      <Header title="Saved Briefs" />
+      <div className="flex-1 px-8 py-8 flex flex-col items-center justify-center text-center">
+        <h2 className="font-editorial text-2xl italic text-ink-secondary mb-2">Coming Soon</h2>
+        <p className="font-ui text-sm text-ink-muted max-w-sm flex-wrap">
+          A place to bookmark individual pieces of intelligence or save entire briefs offline.
         </p>
       </div>
     </AppShell>
   )
 }
 
-// Task 5.1 — chronological history of all analyzed episodes
-export function ArchivePage() {
-  return (
-    <ComingSoonPage
-      title="Archive"
-      description="A chronological history of all analyzed episodes. Coming in Task 5.1."
-    />
-  )
-}
-
-export function SavedPage() {
-  return (
-    <ComingSoonPage
-      title="Saved"
-      description="Your bookmarked episodes and analyst notes."
-    />
-  )
-}
-
 export function SettingsPage() {
   return (
-    <ComingSoonPage
-      title="Settings"
-      description="Manage your account, API integrations, and preferences."
-    />
+    <AppShell>
+      <Header title="Settings" />
+      <div className="flex-1 px-8 py-8 flex flex-col items-center justify-center text-center">
+        <h2 className="font-editorial text-2xl italic text-ink-secondary mb-2">Preferences</h2>
+        <p className="font-ui text-sm text-ink-muted max-w-sm flex-wrap">
+          Settings integration to allow users to link their own RSS feeds or manage auth.
+        </p>
+      </div>
+    </AppShell>
   )
 }

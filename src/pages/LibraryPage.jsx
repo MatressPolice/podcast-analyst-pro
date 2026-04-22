@@ -6,20 +6,41 @@ import EpisodePanel from '../components/EpisodePanel'
 import { useAuth } from '../contexts/AuthContext'
 import { useSubscriptions } from '../hooks/useSubscriptions'
 import { removeSubscription } from '../lib/firestore'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function LibraryPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  
   const { subscriptions, loading } = useSubscriptions()
   const [localSearch,      setLocalSearch]      = useState('')
   const [removing,         setRemoving]         = useState(null)   // uuid being removed
   const [selectedPodcast,  setSelectedPodcast]  = useState(null)   // opens EpisodePanel
   const [selectedEpisode,  setSelectedEpisode]  = useState(null)   // remembered analysis view
 
-  // Clear the selected episode whenever the user switches to a different podcast
+  // Handle Archive navigation to resume an episode panel
   useEffect(() => {
-    setSelectedEpisode(null)
+    if (location.state?.resumeAnalysis && location.state?.proxyPodcast) {
+      setSelectedPodcast(location.state.proxyPodcast)
+      setSelectedEpisode(location.state.resumeEpisode ?? null)
+      
+      // Clear state so a refresh doesn't keep popping it open
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, navigate, location.pathname])
+
+  // Clear the selected episode whenever the user switches to a different podcast
+  // We need to bypass this if we're resuming an episode from Archive
+  useEffect(() => {
+    // If selectedEpisode exists and matches the new podcast, let it be (resume case)
+    // Actually simpler: if someone clicks a different podcast card, they trigger onOpen
+    // which gives a new selectedPodcast. We just clear selectedEpisode then, unless
+    // the selectedEpisode already belongs to this podcast (like when clicking back).
+    // Let's just do:
+    if (!selectedEpisode || selectedEpisode.podcastUuid !== selectedPodcast?.uuid) {
+      setSelectedEpisode(null)
+    }
   }, [selectedPodcast?.uuid])
 
   // Time-of-day greeting

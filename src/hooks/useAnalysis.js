@@ -122,8 +122,11 @@ export function useAnalysis(episodeUuid, uid) {
    * @param {string} audioUrl
    * @param {string} episodeName
    * @param {string} podcastUuid
+   * @param {string} podcastName
+   * @param {string} podcastImageUrl
+   * @param {number} episodeReleaseDate
    */
-  async function beginAnalysis(audioUrl, episodeName, podcastUuid) {
+  async function beginAnalysis(audioUrl, episodeName, podcastUuid, podcastName, podcastImageUrl, episodeReleaseDate) {
     // Guard: don't restart if already in-flight
     if (analysis?.status === 'queued' || analysis?.status === 'processing') return
 
@@ -132,6 +135,9 @@ export function useAnalysis(episodeUuid, uid) {
       await createAnalysis(uid, episodeUuid, {
         episodeName,
         podcastUuid,
+        podcastName: podcastName ?? 'Unknown Podcast',
+        podcastImageUrl: podcastImageUrl ?? '',
+        episodeReleaseDate: episodeReleaseDate ?? 0,
         audioUrl,
         status: 'queued',
       })
