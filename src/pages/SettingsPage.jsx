@@ -129,9 +129,12 @@ export default function SettingsPage() {
               Prompt Laboratory
             </h2>
           </div>
-          <p className="font-ui text-sm text-ink-muted mb-5">
+          <p className="font-ui text-sm text-ink-muted mb-2">
             Manage up to {MAX_PROMPTS} analysis prompts. The <strong className="font-medium text-ink">active</strong> prompt
             is sent to Gemini every time you run "Begin Analysis."
+          </p>
+          <p className="font-ui text-sm text-ink-muted mb-5">
+            Select the green circle on the left of a prompt card to set it as Active.
           </p>
 
           {/* Loading state */}
@@ -243,43 +246,50 @@ function PromptCard({
       `}
     >
       <div className="flex items-start gap-3">
-        {/* Active indicator / toggle */}
+        {/* ── Left selector zone — clicking here activates the prompt ── */}
         <button
           id={`btn-toggle-active-${prompt.id}`}
           onClick={onToggleActive}
           disabled={isToggling || prompt.isActive}
           title={prompt.isActive ? 'Currently active' : 'Set as active'}
-          className={`
-            mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border
-            transition-all duration-150
-            ${prompt.isActive
-              ? 'border-sage-primary bg-sage-primary text-white cursor-default'
-              : 'border-surface-border bg-surface-cream text-transparent hover:border-sage-primary/60'
-            }
-            disabled:opacity-70
-          `}
           aria-label={prompt.isActive ? 'Active prompt' : `Set "${prompt.name}" as active`}
+          className="
+            group flex items-start gap-2.5 flex-1 min-w-0 text-left
+            focus:outline-none disabled:cursor-default
+          "
         >
-          {isToggling
-            ? <Loader2 className="h-3 w-3 animate-spin text-sage-primary" />
-            : <Check className="h-3 w-3" strokeWidth={3} />
-          }
-        </button>
+          {/* Circle indicator */}
+          <span
+            className={`
+              mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full
+              border-2 transition-all duration-150
+              ${prompt.isActive
+                ? 'border-[#4a7c59] bg-[#4a7c59] text-white'
+                : 'border-[#4a7c59] bg-surface-cream text-transparent group-hover:bg-[#4a7c59]/10'
+              }
+            `}
+          >
+            {isToggling
+              ? <Loader2 className="h-3 w-3 animate-spin text-[#4a7c59]" />
+              : <Check className="h-3 w-3" strokeWidth={3} />
+            }
+          </span>
 
-        {/* Name + preview */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-ui text-sm font-semibold text-ink">{prompt.name}</p>
-            {prompt.isActive && (
-              <span className="font-ui text-[10px] font-medium text-sage-primary bg-sage-primary/10 rounded-full px-2 py-0.5">
-                Active
-              </span>
-            )}
-          </div>
-          <p className="font-ui text-xs text-ink-muted mt-1 line-clamp-2 leading-relaxed">
-            {prompt.text}
-          </p>
-        </div>
+          {/* Name + preview */}
+          <span className="flex-1 min-w-0 block">
+            <span className="flex items-center gap-2 flex-wrap">
+              <span className="font-ui text-sm font-semibold text-ink">{prompt.name}</span>
+              {prompt.isActive && (
+                <span className="font-ui text-[10px] font-medium text-sage-primary bg-sage-primary/10 rounded-full px-2 py-0.5">
+                  Active
+                </span>
+              )}
+            </span>
+            <span className="font-ui text-xs text-ink-muted mt-1 line-clamp-2 leading-relaxed block">
+              {prompt.text}
+            </span>
+          </span>
+        </button>
 
         {/* Actions */}
         <div className="flex items-center gap-1 shrink-0">
