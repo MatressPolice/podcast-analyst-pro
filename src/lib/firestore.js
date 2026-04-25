@@ -1,21 +1,33 @@
-// Firestore helpers — Task 2.4 (subscriptions) + Task 4.1 (analyses)
+// Firestore helpers — Task 2.4 (subscriptions) + Task 4.1 (analyses) + Task 5.2 (prompts)
 // Subscription path: artifacts/{appId}/users/{uid}/subscriptions/{podcastUuid}
 // Analysis path:     artifacts/{appId}/users/{uid}/analyses/{episodeUuid}
+// Prompt path:       artifacts/{appId}/users/{uid}/prompts/{promptId}
 import {
   collection,
   doc,
   setDoc,
+  addDoc,
   updateDoc,
   deleteDoc,
+  getDocs,
   onSnapshot,
   serverTimestamp,
   query,
   orderBy,
+  where,
+  limit,
 } from 'firebase/firestore'
 import { db } from './firebase'
 
 // We use the project ID to maintain clean URLs for the unified "artifacts" root
 const APP_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'podcast-analyst-pro'
+
+// ── Editorial Sage — the built-in fallback prompt ─────────────────────────────
+export const DEFAULT_PROMPT = {
+  name: 'Editorial Sage',
+  text: `You are Sage, a critical analyst. Evaluate this transcript for weak logic, lazy assumptions, or unearned conclusions. Provide two distinct sections: "Key Takeaways" and "Critical Gaps". Keep the tone sharp, professional, and intellectually rigorous.`,
+  isActive: true,
+}
 
 /**
  * Returns a reference to the user's subscriptions sub-collection.
@@ -166,3 +178,148 @@ export function listenToAllAnalyses(uid, callback) {
     }
   )
 }
+
+// ── Prompts (Task 5.2) ────────────────────────────────────────────────────────
+// Path: artifacts/{appId}/users/{uid}/prompts/{promptId}
+// Hard limit of 3 prompts. Exactly one should have isActive === true.
+
+function promptsRef(uid) {
+  return collection(db, 'artifacts', APP_ID, 'users', uid, 'prompts')
+}
+
+/**
+ * Real-time listener for the user's prompts collection.
+ * Returns an unsubscribe function.
+ *
+ * @param {string}   uid
+ * @param {Function} callback — called with array of prompt objects (each with .id)
+ * @returns {() => void} unsubscribe
+ */
+export function listenToPrompts(uid, callback) {
+  const ref = query(promptsRef(uid), orderBy('createdAt', 'asc'))
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      const prompts = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+      callback(prompts)
+    },
+    (err) => {
+      console.error('[Firestore] Prompts listener error:', err)
+      callback([])
+    }
+  )
+}
+
+/**
+ * Seed the prompts collection with the built-in Editorial Sage default.
+ * Only called when the collection is empty.
+ *
+ * @param {string} uid
+ */
+export async function seedDefaultPrompt(uid) {
+  await addDoc(promptsRef(uid), {
+    ...DEFAULT_PROMPT,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/**
+ * Add a new prompt document (auto-generated ID).
+ * Callers should enforce the 3-prompt limit before calling.
+ *
+ * @param {string} uid
+ * @param {{ name: string, text: string, isActive: boolean }} prompt
+ * @returns {string} new document ID
+ */
+export async function addPrompt(uid, prompt) {
+  const ref = await addDoc(promptsRef(uid), {
+    name:      prompt.name,
+    text:      prompt.text,
+    isActive:  prompt.isActive ?? false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+  return ref.id
+}
+
+/**
+ * Update fields on an existing prompt document.
+ *
+ * @param {string} uid
+ * @param {string} promptId
+ * @param {object} fields
+ */
+export async function updatePrompt(uid, promptId, fields) {
+  await updateDoc(doc(promptsRef(uid), promptId), {
+    ...fields,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/**
+ * Delete a prompt document.
+ *
+ * @param {string} uid
+ * @param {string} promptId
+ */
+export async function deletePrompt(uid, promptId) {
+  await deleteDoc(doc(promptsRef(uid), promptId))
+}
+
+/**
+ * Set one prompt as active and deactivate all others.
+ * Uses individual updateDoc calls (small collection, ≤3 docs).
+ *
+ * @param {string}   uid
+ * @param {string}   activePromptId
+ * @param {string[]} allPromptIds
+ */
+export async function setActivePrompt(uid, activePromptId, allPromptIds) {
+  await Promise.all(
+    allPromptIds.map((id) =>
+      updateDoc(doc(promptsRef(uid), id), {
+        isActive:  id === activePromptId,
+        updatedAt: serverTimestamp(),
+      })
+    )
+  )
+}
+
+/**
+ * Fetch the user's active prompt text for use in Gemini calls.
+ *
+ * Fallback chain:
+ *   1. Prompt in the user's collection where isActive === true
+ *   2. First prompt in the collection (if none are marked active)
+ *   3. Built-in DEFAULT_PROMPT.text (if collection is empty or Firestore fails)
+ *
+ * @param {string} uid
+ * @returns {Promise<string>} prompt text
+ */
+export async function getActivePrompt(uid) {
+  try {
+    // Try to find the explicitly active prompt first
+    const activeQ  = query(promptsRef(uid), where('isActive', '==', true), limit(1))
+    const activeSnap = await getDocs(activeQ)
+
+    if (!activeSnap.empty) {
+      return activeSnap.docs[0].data().text
+    }
+
+    // No active prompt — try to return the first one in the collection
+    const allQ   = query(promptsRef(uid), orderBy('createdAt', 'asc'), limit(1))
+    const allSnap = await getDocs(allQ)
+
+    if (!allSnap.empty) {
+      return allSnap.docs[0].data().text
+    }
+
+    // Empty collection — use the built-in default
+    return DEFAULT_PROMPT.text
+  } catch (err) {
+    console.warn('[Firestore] getActivePrompt fallback to default:', err)
+    return DEFAULT_PROMPT.text
+  }
+}
+

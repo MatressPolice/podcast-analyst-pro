@@ -5,7 +5,8 @@ import UnauthorizedPage from './pages/UnauthorizedPage'
 import LibraryPage from './pages/LibraryPage'
 import DiscoverPage from './pages/DiscoverPage'
 import ArchivePage from './pages/ArchivePage'
-import { SavedPage, SettingsPage } from './pages/StubPages'
+import SettingsPage from './pages/SettingsPage'
+import { SavedPage } from './pages/StubPages'
 
 // ── Auth-aware route guard ────────────────────────────
 function ProtectedRoute({ children }) {
@@ -30,7 +31,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/login"        element={<LoginPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           {/* Protected area */}

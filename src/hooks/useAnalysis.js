@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { createAnalysis, updateAnalysis, listenToAnalysis } from '../lib/firestore'
+import { createAnalysis, updateAnalysis, listenToAnalysis, getActivePrompt } from '../lib/firestore'
 import { submitTranscription, pollTranscription } from '../lib/assemblyai'
 import { generateIntelligenceBrief } from '../lib/gemini'
 
@@ -85,7 +85,9 @@ export function useAnalysis(episodeUuid, uid) {
 
     geminiRef.current = true
 
-    generateIntelligenceBrief(analysis.transcriptText)
+    // Fetch the user's active prompt first, with graceful fallback to Editorial Sage
+    getActivePrompt(uid)
+      .then((systemPrompt) => generateIntelligenceBrief(analysis.transcriptText, systemPrompt))
       .then(async (brief) => {
         await updateAnalysis(uid, episodeUuid, {
           status: 'analyzed',
@@ -94,9 +96,7 @@ export function useAnalysis(episodeUuid, uid) {
       })
       .catch(async (err) => {
         console.error('[Gemini] Analysis failed:', err)
-        // Note: we might want to keep the transcript if gemini fails, but 
-        // to simplify the state machine we just go to error for now.
-        // User clicking 'Retry Analysis' will re-transcribe too.
+        // Keep state machine simple — go to error so user can retry.
         await updateAnalysis(uid, episodeUuid, {
           status: 'error',
           error:  `AI Analysis failed: ${err.message}`,
