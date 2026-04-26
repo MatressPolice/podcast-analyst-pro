@@ -239,7 +239,7 @@ const RESOURCE_GROUPS = [
 ]
 
 const TIER_ROWS = [
-  { service: 'Gemini 2.0 Flash',  limit: '15 Requests Per Minute' },
+  { service: 'Gemini 3 Flash',    limit: '15 Requests Per Minute' },
   { service: 'Taddy API',         limit: '500 Requests Per Month (Free Tier)' },
   { service: 'AssemblyAI',        limit: '$50 Initial Credit / Rate limited by tier' },
 ]
