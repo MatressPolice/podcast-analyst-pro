@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   X, WifiOff, Play, Pause, Headphones,
-  ArrowLeft, Sparkles, FileText, Brain, Loader2,
+  ArrowLeft, Sparkles, FileText, Brain, Loader2, CheckCircle2,
 } from 'lucide-react'
 import { usePodcastEpisodes } from '../hooks/usePodcastEpisodes'
 import { useAnalysis }        from '../hooks/useAnalysis'
@@ -15,6 +15,7 @@ export default function EpisodePanel({
   selectedEpisode,
   onSelectEpisode,
   onClose,
+  analyzedUuids = new Set(),
 }) {
   const { series, loading, error } = usePodcastEpisodes(podcast?.uuid ?? null)
 
@@ -92,6 +93,7 @@ export default function EpisodePanel({
               loading={loading}
               error={error}
               onSelectEpisode={onSelectEpisode}
+              analyzedUuids={analyzedUuids}
             />
           )}
         </div>
@@ -101,7 +103,7 @@ export default function EpisodePanel({
 }
 
 // ── Episode list view ─────────────────────────────────────────────────────────
-function EpisodeListView({ podcast, episodes, loading, error, onSelectEpisode }) {
+function EpisodeListView({ podcast, episodes, loading, error, onSelectEpisode, analyzedUuids = new Set() }) {
   return (
     <>
       {/* Panel header */}
@@ -173,6 +175,7 @@ function EpisodeListView({ podcast, episodes, loading, error, onSelectEpisode })
                 <EpisodeRow
                   key={episode.uuid ?? idx}
                   episode={episode}
+                  hasAnalysis={analyzedUuids.has(episode.uuid)}
                   onReview={() => onSelectEpisode(episode)}
                 />
               ))}
@@ -526,7 +529,7 @@ function SageAudioPlayer({ src, title }) {
 }
 
 // ── Episode list row ──────────────────────────────────────────────────────────
-function EpisodeRow({ episode, onReview }) {
+function EpisodeRow({ episode, onReview, hasAnalysis = false }) {
   const { uuid, name, datePublished, audioUrl } = episode
 
   return (
@@ -558,6 +561,15 @@ function EpisodeRow({ episode, onReview }) {
               <span className="font-ui text-[11px] text-sage-primary/70 flex items-center gap-1">
                 <Play className="h-2.5 w-2.5" strokeWidth={2} />
                 Audio available
+              </span>
+            </>
+          )}
+          {hasAnalysis && (
+            <>
+              <span className="text-surface-border text-xs">·</span>
+              <span className="font-ui text-[11px] text-sage-primary flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" strokeWidth={2} />
+                Brief ready
               </span>
             </>
           )}

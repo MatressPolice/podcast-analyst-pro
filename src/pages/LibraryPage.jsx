@@ -5,7 +5,7 @@ import Header from '../components/Header'
 import EpisodePanel from '../components/EpisodePanel'
 import { useAuth } from '../contexts/AuthContext'
 import { useSubscriptions } from '../hooks/useSubscriptions'
-import { removeSubscription } from '../lib/firestore'
+import { removeSubscription, listenToAllAnalyses } from '../lib/firestore'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function LibraryPage() {
@@ -18,6 +18,7 @@ export default function LibraryPage() {
   const [removing,         setRemoving]         = useState(null)   // uuid being removed
   const [selectedPodcast,  setSelectedPodcast]  = useState(null)   // opens EpisodePanel
   const [selectedEpisode,  setSelectedEpisode]  = useState(null)   // remembered analysis view
+  const [analyzedUuids,    setAnalyzedUuids]    = useState(new Set()) // UUIDs with completed briefs
 
   // Handle Archive navigation to resume an episode panel
   useEffect(() => {
@@ -29,6 +30,18 @@ export default function LibraryPage() {
       navigate(location.pathname, { replace: true, state: {} })
     }
   }, [location.state, navigate, location.pathname])
+
+  // Real-time listener: build a Set of analyzed episode UUIDs for green-check indicators
+  useEffect(() => {
+    if (!user) return
+    const unsubscribe = listenToAllAnalyses(user.uid, (data) => {
+      const uuids = new Set(
+        data.filter((a) => a.status === 'analyzed').map((a) => a.episodeUuid)
+      )
+      setAnalyzedUuids(uuids)
+    })
+    return unsubscribe
+  }, [user])
 
   // Clear the selected episode whenever the user switches to a different podcast
   // We need to bypass this if we're resuming an episode from Archive
@@ -162,6 +175,7 @@ export default function LibraryPage() {
         selectedEpisode={selectedEpisode}
         onSelectEpisode={setSelectedEpisode}
         onClose={() => setSelectedPodcast(null)}
+        analyzedUuids={analyzedUuids}
       />
     )}
   </>

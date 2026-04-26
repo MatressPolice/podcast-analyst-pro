@@ -133,6 +133,16 @@ export async function updateAnalysis(uid, episodeUuid, fields) {
 }
 
 /**
+ * Permanently delete an analysis document.
+ *
+ * @param {string} uid
+ * @param {string} episodeUuid
+ */
+export async function deleteAnalysis(uid, episodeUuid) {
+  await deleteDoc(analysisRef(uid, episodeUuid))
+}
+
+/**
  * Real-time listener for a single analysis document.
  * Returns an unsubscribe function.
  *
