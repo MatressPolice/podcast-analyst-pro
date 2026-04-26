@@ -122,55 +122,57 @@ Editor: A clean text area for custom instructions.
 
 
 
-4\. Task 5.3: The Command Console (Usage \& Logs)
+4. Task 5.3: The Command Console (Resource Hub & Logs)
 
+Objective: Provide direct access to external billing/usage and a local error-tracking system.
 
+Settings Layout (The Architecture)
 
-API Visibility \& Monitoring
+Implement a horizontal Tab Bar at the top of the Settings page: [Prompts] | [Resources] | [Logs].
 
+This ensures each functional area has its own clean, focused view and scales for future additions.
 
+API Command Center (Resources Tab)
 
-A centralized dashboard within Settings to monitor the health and cost of your integrations:
+Google AI Studio (Gemini):
 
+Billing: https://aistudio.google.com/app/billing
 
+Usage: https://aistudio.google.com/usage?project=gen-lang-client-0377055736&timeRange=last-28-days
 
-Usage Counter: Track "Total Minutes Transcribed" (AssemblyAI) and "Total Analysis Requests" (Gemini).
+AssemblyAI (Transcription):
 
+Cost: https://www.assemblyai.com/dashboard/cost
 
+Usage: https://www.assemblyai.com/dashboard/usage
 
-Resource Links: \* Google AI Studio (Gemini) Dashboard
+Rate Limits: https://www.assemblyai.com/dashboard/rate-limits
 
+Firebase Console:
 
+Overview: https://console.firebase.google.com/u/0/project/podcast-analyst-pro/overview
 
-AssemblyAI Billing
+Billing: https://console.firebase.google.com/u/0/project/podcast-analyst-pro/usage
 
+Taddy API (Podcast & Episode Details):
 
+Dashboard: https://taddy.org/dashboard/my-apps
 
-Firebase Console (Database/Auth)
+Tier Reference Table (Resources Tab)
 
+Gemini 3 Flash: 15 Requests Per Minute.
 
+Taddy API: 500 Requests Per Month (Free Tier).
 
-Taddy API Dashboard
+AssemblyAI: $50 Initial Credit / Rate limited by tier.
 
+The Error Log (Logs Tab)
 
+Location: Firestore collection users/{uid}/logs.
 
-Tier Info: Reference table showing current rate limits (e.g., "Gemini Flash: 15 RPM").
+Data: Captures timestamps, Module name (Taddy, Assembly, Gemini), and the Raw Error Message.
 
-
-
-The Error Log (The "Black Box")
-
-
-
-Location: A "Logs" tab in Settings.
-
-
-
-Content: Captures failures with timestamps, module names (Taddy, Assembly, Gemini), and raw error messages.
-
-
-
-Retention: Logs are auto-deleted after 7 days to keep Firestore lean.
+Retention: UI should indicate that entries older than 7 days are subject to auto-deletion.
 
 
 

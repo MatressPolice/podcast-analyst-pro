@@ -48,12 +48,12 @@ function subscriptionsRef(uid) {
 export async function addSubscription(uid, podcast) {
   const ref = doc(subscriptionsRef(uid), podcast.uuid)
   await setDoc(ref, {
-    uuid:        podcast.uuid,
-    name:        podcast.name,
+    uuid: podcast.uuid,
+    name: podcast.name,
     description: podcast.description ?? '',
-    imageUrl:    podcast.imageUrl    ?? '',
-    itunesId:    podcast.itunesId   ?? null,
-    addedAt:     serverTimestamp(),
+    imageUrl: podcast.imageUrl ?? '',
+    itunesId: podcast.itunesId ?? null,
+    addedAt: serverTimestamp(),
   })
 }
 
@@ -235,9 +235,9 @@ export async function seedDefaultPrompt(uid) {
  */
 export async function addPrompt(uid, prompt) {
   const ref = await addDoc(promptsRef(uid), {
-    name:      prompt.name,
-    text:      prompt.text,
-    isActive:  prompt.isActive ?? false,
+    name: prompt.name,
+    text: prompt.text,
+    isActive: prompt.isActive ?? false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
@@ -280,7 +280,7 @@ export async function setActivePrompt(uid, activePromptId, allPromptIds) {
   await Promise.all(
     allPromptIds.map((id) =>
       updateDoc(doc(promptsRef(uid), id), {
-        isActive:  id === activePromptId,
+        isActive: id === activePromptId,
         updatedAt: serverTimestamp(),
       })
     )
@@ -301,7 +301,7 @@ export async function setActivePrompt(uid, activePromptId, allPromptIds) {
 export async function getActivePrompt(uid) {
   try {
     // Try to find the explicitly active prompt first
-    const activeQ  = query(promptsRef(uid), where('isActive', '==', true), limit(1))
+    const activeQ = query(promptsRef(uid), where('isActive', '==', true), limit(1))
     const activeSnap = await getDocs(activeQ)
 
     if (!activeSnap.empty) {
@@ -309,7 +309,7 @@ export async function getActivePrompt(uid) {
     }
 
     // No active prompt — try to return the first one in the collection
-    const allQ   = query(promptsRef(uid), orderBy('createdAt', 'asc'), limit(1))
+    const allQ = query(promptsRef(uid), orderBy('createdAt', 'asc'), limit(1))
     const allSnap = await getDocs(allQ)
 
     if (!allSnap.empty) {
