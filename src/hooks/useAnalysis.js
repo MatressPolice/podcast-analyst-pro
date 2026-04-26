@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { createAnalysis, updateAnalysis, listenToAnalysis, getActivePrompt } from '../lib/firestore'
+import { createAnalysis, updateAnalysis, listenToAnalysis, getActivePrompt, writeLog } from '../lib/firestore'
 import { submitTranscription, pollTranscription } from '../lib/assemblyai'
 import { generateIntelligenceBrief } from '../lib/gemini'
 
@@ -59,6 +59,7 @@ export function useAnalysis(episodeUuid, uid) {
       .catch(async (err) => {
         if (!controller.signal.aborted) {
           console.error('[Analysis] Poll failed:', err)
+          writeLog(uid, 'AssemblyAI', err.message)
           await updateAnalysis(uid, episodeUuid, {
             status: 'error',
             error:  err.message,
@@ -96,6 +97,7 @@ export function useAnalysis(episodeUuid, uid) {
       })
       .catch(async (err) => {
         console.error('[Gemini] Analysis failed:', err)
+        writeLog(uid, 'Gemini', err.message)
         // Keep state machine simple — go to error so user can retry.
         await updateAnalysis(uid, episodeUuid, {
           status: 'error',
@@ -154,6 +156,7 @@ export function useAnalysis(episodeUuid, uid) {
       // Polling starts automatically via the useEffect above
     } catch (err) {
       console.error('[Analysis] Begin failed:', err)
+      writeLog(uid, 'AssemblyAI', `Begin failed: ${err.message}`)
       await updateAnalysis(uid, episodeUuid, {
         status: 'error',
         error:  err.message,

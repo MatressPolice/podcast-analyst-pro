@@ -1,7 +1,8 @@
-// Firestore helpers — Task 2.4 (subscriptions) + Task 4.1 (analyses) + Task 5.2 (prompts)
+// Firestore helpers — Task 2.4 (subscriptions) + Task 4.1 (analyses) + Task 5.2 (prompts) + Task 5.3 (logs)
 // Subscription path: artifacts/{appId}/users/{uid}/subscriptions/{podcastUuid}
 // Analysis path:     artifacts/{appId}/users/{uid}/analyses/{episodeUuid}
 // Prompt path:       artifacts/{appId}/users/{uid}/prompts/{promptId}
+// Log path:          artifacts/{appId}/users/{uid}/logs/{logId}
 import {
   collection,
   doc,
@@ -323,3 +324,53 @@ export async function getActivePrompt(uid) {
   }
 }
 
+// ── Error Logs (Task 5.3) ─────────────────────────────────────────────────────
+// Path: artifacts/{appId}/users/{uid}/logs/{logId}
+// module values: 'Taddy' | 'AssemblyAI' | 'Gemini'
+
+function logsRef(uid) {
+  return collection(db, 'artifacts', APP_ID, 'users', uid, 'logs')
+}
+
+/**
+ * Write a single error log entry.
+ *
+ * @param {string} uid
+ * @param {'Taddy'|'AssemblyAI'|'Gemini'} module
+ * @param {string} message
+ */
+export async function writeLog(uid, module, message) {
+  try {
+    await addDoc(logsRef(uid), {
+      module,
+      message: String(message).slice(0, 2000), // cap length
+      timestamp: serverTimestamp(),
+    })
+  } catch (err) {
+    // Non-fatal — never let logging break the app
+    console.warn('[Firestore] writeLog failed:', err)
+  }
+}
+
+/**
+ * Real-time listener for the user's error logs, newest-first.
+ * Returns an unsubscribe function.
+ *
+ * @param {string}   uid
+ * @param {Function} callback — called with array of log objects (each with .id)
+ * @returns {() => void} unsubscribe
+ */
+export function listenToLogs(uid, callback) {
+  const ref = query(logsRef(uid), orderBy('timestamp', 'desc'))
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      const logs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))
+      callback(logs)
+    },
+    (err) => {
+      console.error('[Firestore] Logs listener error:', err)
+      callback([])
+    }
+  )
+}

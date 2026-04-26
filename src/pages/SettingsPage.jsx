@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   FlaskConical, Plus, Trash2, Loader2, Check, Pencil, X,
+  LayoutDashboard, AlertCircle, ExternalLink, Info,
 } from 'lucide-react'
 import AppShell from '../components/AppShell'
 import Header from '../components/Header'
@@ -13,207 +14,400 @@ import {
   deletePrompt,
   setActivePrompt,
   DEFAULT_PROMPT,
+  listenToLogs,
 } from '../lib/firestore'
 
 const MAX_PROMPTS = 3
+const TABS = ['Prompts', 'Resources', 'Logs']
 
-// ── Settings page (Task 5.2 — Prompt Laboratory) ─────────────────────────────
+// ── Settings page (Task 5.3 — Command Console) ────────────────────────────────
 export default function SettingsPage() {
   const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState('Prompts')
+
+  return (
+    <AppShell>
+      <Header title="Settings" />
+
+      <div className="flex-1 px-8 py-8 max-w-2xl">
+        {/* ── Tab Bar ── */}
+        <div className="flex items-center gap-1 mb-8 border-b border-surface-border">
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              id={`tab-${tab.toLowerCase()}`}
+              onClick={() => setActiveTab(tab)}
+              className={`
+                px-4 py-2 font-ui text-sm font-medium transition-all duration-150
+                border-b-2 -mb-px
+                ${activeTab === tab
+                  ? 'border-sage-primary text-sage-primary'
+                  : 'border-transparent text-ink-muted hover:text-ink'
+                }
+              `}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Tab Panels ── */}
+        {activeTab === 'Prompts'   && <PromptsTab   uid={user?.uid} />}
+        {activeTab === 'Resources' && <ResourcesTab />}
+        {activeTab === 'Logs'      && <LogsTab      uid={user?.uid} />}
+      </div>
+    </AppShell>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROMPTS TAB (existing Task 5.2 logic)
+// ══════════════════════════════════════════════════════════════════════════════
+function PromptsTab({ uid }) {
   const [prompts,   setPrompts]   = useState([])
   const [seeded,    setSeeded]    = useState(false)
   const [loading,   setLoading]   = useState(true)
-
-  // Editing state
-  const [editingId, setEditingId] = useState(null)  // prompt.id being edited, or 'new'
+  const [editingId, setEditingId] = useState(null)
   const [draftName, setDraftName] = useState('')
   const [draftText, setDraftText] = useState('')
-
-  // Saving / toggling spinners
   const [saving,    setSaving]    = useState(false)
-  const [toggling,  setToggling]  = useState(null)  // id currently being toggled
-  const [deleting,  setDeleting]  = useState(null)  // id currently being deleted
+  const [toggling,  setToggling]  = useState(null)
+  const [deleting,  setDeleting]  = useState(null)
 
-  // ── Real-time listener + auto-seed ──────────────────────────────────────────
   useEffect(() => {
-    if (!user?.uid) return
-
-    const unsub = listenToPrompts(user.uid, async (docs) => {
+    if (!uid) return
+    const unsub = listenToPrompts(uid, async (docs) => {
       setLoading(false)
-
       if (docs.length === 0 && !seeded) {
-        // First visit — seed the Editorial Sage default
         setSeeded(true)
-        await seedDefaultPrompt(user.uid)
-        // The listener will fire again after the seed write
+        await seedDefaultPrompt(uid)
       } else {
         setPrompts(docs)
       }
     })
-
     return unsub
-  }, [user?.uid]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [uid]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
-  function startEdit(prompt) {
-    setEditingId(prompt.id)
-    setDraftName(prompt.name)
-    setDraftText(prompt.text)
-  }
-
-  function startNew() {
-    setEditingId('new')
-    setDraftName('')
-    setDraftText('')
-  }
-
-  function cancelEdit() {
-    setEditingId(null)
-    setDraftName('')
-    setDraftText('')
-  }
+  function startEdit(prompt) { setEditingId(prompt.id); setDraftName(prompt.name); setDraftText(prompt.text) }
+  function startNew()        { setEditingId('new');      setDraftName('');           setDraftText('') }
+  function cancelEdit()      { setEditingId(null);       setDraftName('');           setDraftText('') }
 
   async function handleSave() {
     if (!draftName.trim() || !draftText.trim()) return
     setSaving(true)
     try {
       if (editingId === 'new') {
-        await addPrompt(user.uid, {
-          name:     draftName.trim(),
-          text:     draftText.trim(),
-          isActive: prompts.length === 0, // first prompt is active by default
-        })
+        await addPrompt(uid, { name: draftName.trim(), text: draftText.trim(), isActive: prompts.length === 0 })
       } else {
-        await updatePrompt(user.uid, editingId, {
-          name: draftName.trim(),
-          text: draftText.trim(),
-        })
+        await updatePrompt(uid, editingId, { name: draftName.trim(), text: draftText.trim() })
       }
       cancelEdit()
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
   async function handleToggleActive(promptId) {
     setToggling(promptId)
-    try {
-      await setActivePrompt(user.uid, promptId, prompts.map((p) => p.id))
-    } finally {
-      setToggling(null)
-    }
+    try   { await setActivePrompt(uid, promptId, prompts.map((p) => p.id)) }
+    finally { setToggling(null) }
   }
 
   async function handleDelete(promptId, promptName) {
     if (!window.confirm(`Delete prompt "${promptName}"? This cannot be undone.`)) return
     setDeleting(promptId)
-    try {
-      await deletePrompt(user.uid, promptId)
-    } finally {
-      setDeleting(null)
-    }
+    try   { await deletePrompt(uid, promptId) }
+    finally { setDeleting(null) }
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <AppShell>
-      <Header title="Settings" />
-
-      <div className="flex-1 px-8 py-8 max-w-2xl space-y-10">
-
-        {/* ── Section: Prompt Laboratory ── */}
-        <section>
-          <div className="flex items-center gap-2 mb-1">
-            <FlaskConical className="h-4 w-4 text-sage-primary" strokeWidth={1.5} />
-            <h2 className="font-ui text-xs font-semibold text-ink-secondary uppercase tracking-wide">
-              Prompt Laboratory
-            </h2>
-          </div>
-          <p className="font-ui text-sm text-ink-muted mb-2">
-            Manage up to {MAX_PROMPTS} analysis prompts. The <strong className="font-medium text-ink">active</strong> prompt
-            is sent to Gemini every time you run "Begin Analysis."
-          </p>
-          <p className="font-ui text-sm text-ink-muted mb-5">
-            Select the green circle on the left of a prompt card to set it as Active.
-          </p>
-
-          {/* Loading state */}
-          {loading && (
-            <div className="flex items-center gap-2 text-ink-muted py-6">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="font-ui text-sm">Loading prompts…</span>
-            </div>
-          )}
-
-          {/* Prompt list */}
-          {!loading && (
-            <div className="space-y-3">
-              {prompts.map((prompt) => (
-                <PromptCard
-                  key={prompt.id}
-                  prompt={prompt}
-                  isEditing={editingId === prompt.id}
-                  isToggling={toggling === prompt.id}
-                  isDeleting={deleting === prompt.id}
-                  isSaving={saving && editingId === prompt.id}
-                  draftName={draftName}
-                  draftText={draftText}
-                  onDraftName={setDraftName}
-                  onDraftText={setDraftText}
-                  onEdit={() => startEdit(prompt)}
-                  onCancelEdit={cancelEdit}
-                  onSave={handleSave}
-                  onToggleActive={() => handleToggleActive(prompt.id)}
-                  onDelete={() => handleDelete(prompt.id, prompt.name)}
-                />
-              ))}
-
-              {/* New prompt editor */}
-              {editingId === 'new' && (
-                <PromptEditor
-                  title="New Prompt"
-                  draftName={draftName}
-                  draftText={draftText}
-                  onDraftName={setDraftName}
-                  onDraftText={setDraftText}
-                  onSave={handleSave}
-                  onCancel={cancelEdit}
-                  saving={saving}
-                />
-              )}
-
-              {/* Add button (only when < MAX and not already adding) */}
-              {prompts.length < MAX_PROMPTS && editingId !== 'new' && (
-                <button
-                  id="btn-add-prompt"
-                  onClick={startNew}
-                  className="
-                    w-full flex items-center justify-center gap-2
-                    rounded-xl border border-dashed border-surface-border
-                    py-3 font-ui text-sm text-ink-muted
-                    hover:border-sage-primary/40 hover:text-sage-primary
-                    transition-colors duration-150
-                  "
-                >
-                  <Plus className="h-4 w-4" strokeWidth={2} />
-                  Add Prompt ({prompts.length}/{MAX_PROMPTS})
-                </button>
-              )}
-
-              {prompts.length >= MAX_PROMPTS && (
-                <p className="font-ui text-xs text-ink-muted text-center py-1">
-                  Maximum of {MAX_PROMPTS} prompts reached. Delete one to add another.
-                </p>
-              )}
-            </div>
-          )}
-        </section>
+    <section>
+      <div className="flex items-center gap-2 mb-1">
+        <FlaskConical className="h-4 w-4 text-sage-primary" strokeWidth={1.5} />
+        <h2 className="font-ui text-xs font-semibold text-ink-secondary uppercase tracking-wide">
+          Prompt Laboratory
+        </h2>
       </div>
-    </AppShell>
+      <p className="font-ui text-sm text-ink-muted mb-2">
+        Manage up to {MAX_PROMPTS} analysis prompts. The <strong className="font-medium text-ink">active</strong> prompt
+        is sent to Gemini every time you run "Begin Analysis."
+      </p>
+      <p className="font-ui text-sm text-ink-muted mb-5">
+        Select the green circle on the left of a prompt card to set it as Active.
+      </p>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-ink-muted py-6">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="font-ui text-sm">Loading prompts…</span>
+        </div>
+      )}
+
+      {!loading && (
+        <div className="space-y-3">
+          {prompts.map((prompt) => (
+            <PromptCard
+              key={prompt.id}
+              prompt={prompt}
+              isEditing={editingId === prompt.id}
+              isToggling={toggling === prompt.id}
+              isDeleting={deleting === prompt.id}
+              isSaving={saving && editingId === prompt.id}
+              draftName={draftName}
+              draftText={draftText}
+              onDraftName={setDraftName}
+              onDraftText={setDraftText}
+              onEdit={() => startEdit(prompt)}
+              onCancelEdit={cancelEdit}
+              onSave={handleSave}
+              onToggleActive={() => handleToggleActive(prompt.id)}
+              onDelete={() => handleDelete(prompt.id, prompt.name)}
+            />
+          ))}
+
+          {editingId === 'new' && (
+            <PromptEditor
+              title="New Prompt"
+              draftName={draftName}
+              draftText={draftText}
+              onDraftName={setDraftName}
+              onDraftText={setDraftText}
+              onSave={handleSave}
+              onCancel={cancelEdit}
+              saving={saving}
+            />
+          )}
+
+          {prompts.length < MAX_PROMPTS && editingId !== 'new' && (
+            <button
+              id="btn-add-prompt"
+              onClick={startNew}
+              className="
+                w-full flex items-center justify-center gap-2
+                rounded-xl border border-dashed border-surface-border
+                py-3 font-ui text-sm text-ink-muted
+                hover:border-sage-primary/40 hover:text-sage-primary
+                transition-colors duration-150
+              "
+            >
+              <Plus className="h-4 w-4" strokeWidth={2} />
+              Add Prompt ({prompts.length}/{MAX_PROMPTS})
+            </button>
+          )}
+
+          {prompts.length >= MAX_PROMPTS && (
+            <p className="font-ui text-xs text-ink-muted text-center py-1">
+              Maximum of {MAX_PROMPTS} prompts reached. Delete one to add another.
+            </p>
+          )}
+        </div>
+      )}
+    </section>
   )
 }
 
-// ── Prompt card ──────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// RESOURCES TAB (Task 5.3 — API Command Center)
+// ══════════════════════════════════════════════════════════════════════════════
+const RESOURCE_GROUPS = [
+  {
+    label: 'Google AI Studio (Gemini)',
+    links: [
+      { name: 'Billing',  href: 'https://aistudio.google.com/app/billing' },
+      { name: 'Usage',    href: 'https://aistudio.google.com/usage?project=gen-lang-client-0377055736&timeRange=last-28-days' },
+    ],
+  },
+  {
+    label: 'AssemblyAI (Transcription)',
+    links: [
+      { name: 'Cost',        href: 'https://www.assemblyai.com/dashboard/cost' },
+      { name: 'Usage',       href: 'https://www.assemblyai.com/dashboard/usage' },
+      { name: 'Rate Limits', href: 'https://www.assemblyai.com/dashboard/rate-limits' },
+    ],
+  },
+  {
+    label: 'Firebase',
+    links: [
+      { name: 'Overview', href: 'https://console.firebase.google.com/u/0/project/podcast-analyst-pro/overview' },
+      { name: 'Billing',  href: 'https://console.firebase.google.com/u/0/project/podcast-analyst-pro/usage' },
+    ],
+  },
+  {
+    label: 'Taddy API (Podcast & Episode Details)',
+    links: [
+      { name: 'Dashboard', href: 'https://taddy.org/dashboard/my-apps' },
+    ],
+  },
+]
+
+const TIER_ROWS = [
+  { service: 'Gemini 2.0 Flash',  limit: '15 Requests Per Minute' },
+  { service: 'Taddy API',         limit: '500 Requests Per Month (Free Tier)' },
+  { service: 'AssemblyAI',        limit: '$50 Initial Credit / Rate limited by tier' },
+]
+
+function ResourcesTab() {
+  return (
+    <section className="space-y-8">
+      {/* Section header */}
+      <div className="flex items-center gap-2">
+        <LayoutDashboard className="h-4 w-4 text-sage-primary" strokeWidth={1.5} />
+        <h2 className="font-ui text-xs font-semibold text-ink-secondary uppercase tracking-wide">
+          API Command Center
+        </h2>
+      </div>
+
+      {/* Link groups */}
+      <div className="space-y-5">
+        {RESOURCE_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="font-ui text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2">
+              {group.label}
+            </p>
+            <div className="rounded-xl border border-surface-border bg-surface-container overflow-hidden divide-y divide-surface-border">
+              {group.links.map((link) => (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="
+                    flex items-center justify-between px-4 py-3
+                    font-ui text-sm text-ink
+                    hover:bg-sage-primary/[0.04] hover:text-sage-primary
+                    transition-colors duration-150 group
+                  "
+                >
+                  <span>{link.name}</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-ink-muted group-hover:text-sage-primary transition-colors" strokeWidth={2} />
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tier reference table */}
+      <div>
+        <p className="font-ui text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2">
+          Tier Reference
+        </p>
+        <div className="rounded-xl border border-surface-border bg-surface-container overflow-hidden">
+          <table className="w-full text-sm font-ui">
+            <thead>
+              <tr className="border-b border-surface-border bg-surface-cream">
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-muted uppercase tracking-wide">Service</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-muted uppercase tracking-wide">Free-Tier Limit</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-border">
+              {TIER_ROWS.map((row) => (
+                <tr key={row.service}>
+                  <td className="px-4 py-3 font-medium text-ink">{row.service}</td>
+                  <td className="px-4 py-3 text-ink-muted">{row.limit}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LOGS TAB (Task 5.3 — Error Log Viewer)
+// ══════════════════════════════════════════════════════════════════════════════
+const MODULE_COLORS = {
+  AssemblyAI: 'bg-blue-50 text-blue-700 border border-blue-200',
+  Gemini:     'bg-purple-50 text-purple-700 border border-purple-200',
+  Taddy:      'bg-amber-50 text-amber-700 border border-amber-200',
+}
+
+function LogsTab({ uid }) {
+  const [logs,    setLogs]    = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!uid) return
+    const unsub = listenToLogs(uid, (docs) => {
+      setLogs(docs)
+      setLoading(false)
+    })
+    return unsub
+  }, [uid])
+
+  function formatTs(ts) {
+    if (!ts?.seconds) return '—'
+    return new Date(ts.seconds * 1000).toLocaleString(undefined, {
+      month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-sage-primary" strokeWidth={1.5} />
+          <h2 className="font-ui text-xs font-semibold text-ink-secondary uppercase tracking-wide">
+            Error Log
+          </h2>
+        </div>
+        <span className="font-ui text-xs text-ink-muted">
+          {logs.length} {logs.length === 1 ? 'entry' : 'entries'}
+        </span>
+      </div>
+
+      {/* Retention notice */}
+      <div className="flex items-start gap-2 rounded-lg border border-surface-border bg-surface-cream px-3 py-2.5">
+        <Info className="h-3.5 w-3.5 text-ink-muted mt-0.5 shrink-0" strokeWidth={2} />
+        <p className="font-ui text-xs text-ink-muted leading-relaxed">
+          Entries older than <strong className="font-medium text-ink">7 days</strong> are subject to auto-deletion
+          to keep Firestore lean.
+        </p>
+      </div>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-ink-muted py-6">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="font-ui text-sm">Loading logs…</span>
+        </div>
+      )}
+
+      {!loading && logs.length === 0 && (
+        <div className="rounded-xl border border-dashed border-surface-border py-10 text-center">
+          <Check className="h-6 w-6 text-sage-primary mx-auto mb-2" strokeWidth={1.5} />
+          <p className="font-ui text-sm text-ink-muted">No errors logged. All systems nominal.</p>
+        </div>
+      )}
+
+      {!loading && logs.length > 0 && (
+        <div className="rounded-xl border border-surface-border bg-surface-container overflow-hidden divide-y divide-surface-border">
+          {logs.map((log) => (
+            <div key={log.id} className="px-4 py-3 space-y-1">
+              <div className="flex items-center justify-between gap-3">
+                <span
+                  className={`
+                    inline-block rounded-full px-2 py-0.5 font-ui text-[10px] font-semibold
+                    ${MODULE_COLORS[log.module] ?? 'bg-surface-cream text-ink-muted border border-surface-border'}
+                  `}
+                >
+                  {log.module ?? 'Unknown'}
+                </span>
+                <span className="font-ui text-xs text-ink-muted shrink-0">{formatTs(log.timestamp)}</span>
+              </div>
+              <p className="font-ui text-xs text-ink leading-relaxed break-words">{log.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SHARED SUB-COMPONENTS (Prompts tab)
+// ══════════════════════════════════════════════════════════════════════════════
+
 function PromptCard({
   prompt,
   isEditing, isToggling, isDeleting, isSaving,
@@ -319,7 +513,6 @@ function PromptCard({
   )
 }
 
-// ── Prompt editor (shared by add + edit) ─────────────────────────────────────
 function PromptEditor({ title, draftName, draftText, onDraftName, onDraftText, onSave, onCancel, saving }) {
   const valid = draftName.trim().length > 0 && draftText.trim().length > 0
 
