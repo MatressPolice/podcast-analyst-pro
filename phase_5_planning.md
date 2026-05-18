@@ -42,11 +42,9 @@ Item A: Archive Content Display (COMPLETE)
 
 Result: Cards now expand in-place in the Archive to show the Intelligence Brief. Navigation to Library removed.
 
-Item B: Library Status Indicators (PENDING)
+Item B: Library Status Indicators (COMPLETE)
 
-Objective: In the Library episode list (the slide-out), provide a visual cue (e.g., a green check mark next to the "Intelligence Brief" button).
-
-Logic: Use a single listener on the analyses collection to cross-reference episode IDs. The check mark must appear automatically upon successful completion of the analysis.
+Result: LibraryPage now runs a real-time listenToAllAnalyses listener that builds a Set of analyzed episode UUIDs. EpisodePanel receives this set and each EpisodeRow shows a Sage-green CheckCircle2 icon + "Brief ready" label when the episode has a completed analysis. Updates automatically on completion.
 
 Item C: Naming Standardization (COMPLETE)
 
@@ -56,6 +54,6 @@ Item D: Correct Tier Info (COMPLETE)
 
 Result: Corrected Gemini model label to Gemini 3 Flash in the Resources tab.
 
-Item E: Brief Deletion (PENDING)
+Item E: Brief Deletion (COMPLETE)
 
-Objective: Add a "Delete" button (trash icon) to the Archive cards. This must remove the specific analysis document from Firestore after a confirmation prompt.
+Result: Each Archive card now has a Trash2 icon button (separate from the expand toggle). Clicking it opens a custom DeleteModal (no window.confirm) with Cancel and Delete Brief actions. Deletion calls deleteAnalysis() in firestore.js and the card disappears automatically via the real-time listener.

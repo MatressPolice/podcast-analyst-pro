@@ -3,13 +3,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Only-Me gatekeeper — all access locked to the authorized owner UID.
-    // The wildcarded sub-path covers users/{uid}/subscriptions/{docId}
-    // and any future collections we add under the user document.
-    match /users/{uid}/{document=**} {
+    // The wildcarded sub-path covers the artifacts paths used by the app.
+    match /artifacts/{appId}/users/{uid}/{document=**} {
       allow read, write: if
         request.auth != null &&
-        request.auth.uid == uid &&
-        request.auth.uid == 'KL1q0qwkRWaORQuveeXl0enXtxH3';
+        request.auth.uid == uid;
     }
   }
 }
