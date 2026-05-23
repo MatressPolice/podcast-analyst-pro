@@ -10,6 +10,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  getDoc,
   getDocs,
   onSnapshot,
   serverTimestamp,
@@ -389,3 +390,75 @@ export function listenToLogs(uid, callback) {
     }
   )
 }
+
+// ── Authorized Users (Access Control) ──────────────────────────────────────────
+// Collection path: authorized_users/{email}
+// Role values: 'admin' | 'authorized_user'
+
+function authorizedUsersRef() {
+  return collection(db, 'authorized_users')
+}
+
+/**
+ * Fetch a single user's authorization document.
+ * Called during the auth state change to check permissions.
+ *
+ * @param {string} email
+ */
+export async function getAuthorization(email) {
+  try {
+    const docRef = doc(db, 'authorized_users', email.toLowerCase().trim())
+    const snap = await getDoc(docRef)
+    return snap.exists() ? snap.data() : null
+  } catch (err) {
+    console.error('[Firestore] getAuthorization failed:', err)
+    return null
+  }
+}
+
+/**
+ * Listen to all authorized users (admin only).
+ * Returns an unsubscribe function.
+ *
+ * @param {Function} callback
+ * @returns {() => void} unsubscribe
+ */
+export function listenToAuthorizedUsers(callback) {
+  return onSnapshot(
+    authorizedUsersRef(),
+    (snapshot) => {
+      const users = snapshot.docs.map((d) => ({ email: d.id, ...d.data() }))
+      callback(users)
+    },
+    (err) => {
+      console.error('[Firestore] Authorized users listener error:', err)
+      window.alert('[Firestore] Authorized users listener error: ' + err.message)
+      callback([])
+    }
+  )
+}
+
+/**
+ * Add or update an authorized user (admin only).
+ *
+ * @param {string} email
+ * @param {'admin'|'authorized_user'} role
+ */
+export async function addAuthorizedUser(email, role) {
+  const ref = doc(db, 'authorized_users', email.toLowerCase().trim())
+  await setDoc(ref, {
+    role,
+    addedAt: serverTimestamp(),
+  })
+}
+
+/**
+ * Remove an authorized user (admin only).
+ *
+ * @param {string} email
+ */
+export async function removeAuthorizedUser(email) {
+  const ref = doc(db, 'authorized_users', email.toLowerCase().trim())
+  await deleteDoc(ref)
+}
+

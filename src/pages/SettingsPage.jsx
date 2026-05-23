@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   FlaskConical, Plus, Trash2, Loader2, Check, Pencil, X,
-  LayoutDashboard, AlertCircle, ExternalLink, Info,
+  LayoutDashboard, AlertCircle, ExternalLink, Info, Users,
 } from 'lucide-react'
 import AppShell from '../components/AppShell'
 import Header from '../components/Header'
@@ -15,15 +15,21 @@ import {
   setActivePrompt,
   DEFAULT_PROMPT,
   listenToLogs,
+  listenToAuthorizedUsers,
+  addAuthorizedUser,
+  removeAuthorizedUser,
 } from '../lib/firestore'
 
 const MAX_PROMPTS = 3
-const TABS = ['Prompts', 'Resources', 'Logs']
 
 // ── Settings page (Task 5.3 — Command Console) ────────────────────────────────
 export default function SettingsPage() {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const [activeTab, setActiveTab] = useState('Prompts')
+
+  const tabs = role === 'admin'
+    ? ['Prompts', 'Users', 'Resources', 'Logs']
+    : ['Prompts', 'Resources', 'Logs']
 
   return (
     <AppShell>
@@ -32,7 +38,7 @@ export default function SettingsPage() {
       <div className="flex-1 px-8 py-8 max-w-2xl">
         {/* ── Tab Bar ── */}
         <div className="flex items-center gap-1 mb-8 border-b border-surface-border">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab}
               id={`tab-${tab.toLowerCase()}`}
@@ -53,12 +59,14 @@ export default function SettingsPage() {
 
         {/* ── Tab Panels ── */}
         {activeTab === 'Prompts'   && <PromptsTab   uid={user?.uid} />}
+        {activeTab === 'Users'     && role === 'admin' && <UsersTab />}
         {activeTab === 'Resources' && <ResourcesTab />}
         {activeTab === 'Logs'      && <LogsTab      uid={user?.uid} />}
       </div>
     </AppShell>
   )
 }
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PROMPTS TAB (existing Task 5.2 logic)
@@ -585,5 +593,222 @@ function PromptEditor({ title, draftName, draftText, onDraftName, onDraftText, o
         </button>
       </div>
     </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// USERS TAB (Access Whitelist Management)
+// ══════════════════════════════════════════════════════════════════════════════
+function UsersTab() {
+  const { user: currentUser } = useAuth()
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [emailInput, setEmailInput] = useState('')
+  const [roleInput, setRoleInput] = useState('authorized_user')
+  const [saving, setSaving] = useState(false)
+  const [deletingEmail, setDeletingEmail] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const unsub = listenToAuthorizedUsers((docs) => {
+      setUsers(docs)
+      setLoading(false)
+    })
+    return unsub
+  }, [])
+
+  async function handleAddUser(e) {
+    e.preventDefault()
+    const cleanEmail = emailInput.trim().toLowerCase()
+    if (!cleanEmail) return
+
+    // Simple email regex validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(cleanEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+    try {
+      await addAuthorizedUser(cleanEmail, roleInput)
+      setEmailInput('')
+      setRoleInput('authorized_user')
+    } catch (err) {
+      console.error('[UsersTab] Add user failed:', err)
+      setError('Failed to authorize user: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleRemoveUser(email) {
+    if (email.toLowerCase().trim() === currentUser?.email?.toLowerCase().trim()) {
+      window.alert("You cannot revoke your own admin access to prevent locking yourself out.")
+      return
+    }
+    if (!window.confirm(`Revoke application access for "${email}"?`)) return
+
+    setDeletingEmail(email)
+    try {
+      await removeAuthorizedUser(email)
+    } catch (err) {
+      console.error('[UsersTab] Remove user failed:', err)
+      window.alert('Failed to remove user: ' + err.message)
+    } finally {
+      setDeletingEmail(null)
+    }
+  }
+
+  return (
+    <section className="space-y-6">
+      {/* Tab Header */}
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <Users className="h-4 w-4 text-sage-primary" strokeWidth={1.5} />
+          <h2 className="font-ui text-xs font-semibold text-ink-secondary uppercase tracking-wide">
+            User Access Management
+          </h2>
+        </div>
+        <p className="font-ui text-sm text-ink-muted">
+          Authorize team members or external accounts to access this workspace. Access can be revoked instantly.
+        </p>
+      </div>
+
+      {/* Add User Form */}
+      <form onSubmit={handleAddUser} className="rounded-xl border border-surface-border bg-surface-container p-4 space-y-4">
+        <p className="font-ui text-xs font-semibold text-ink-muted uppercase tracking-wide">
+          Authorize New User
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <input
+              id="input-user-email"
+              type="email"
+              value={emailInput}
+              onChange={(e) => { setEmailInput(e.target.value); setError(null) }}
+              placeholder="e.g. colleague@example.com"
+              required
+              className="
+                w-full rounded-lg border border-surface-border bg-surface-cream
+                px-3 py-2 font-ui text-sm text-ink placeholder:text-ink-muted
+                focus:outline-none focus:ring-2 focus:ring-sage-primary/30
+                transition-shadow duration-150
+              "
+            />
+          </div>
+          <div className="w-full sm:w-44">
+            <select
+              id="select-user-role"
+              value={roleInput}
+              onChange={(e) => setRoleInput(e.target.value)}
+              className="
+                w-full rounded-lg border border-surface-border bg-surface-cream
+                px-3 py-2 font-ui text-sm text-ink
+                focus:outline-none focus:ring-2 focus:ring-sage-primary/30
+                transition-shadow duration-150
+              "
+            >
+              <option value="authorized_user">Authorized User</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+          <button
+            id="btn-add-user"
+            type="submit"
+            disabled={saving || !emailInput.trim()}
+            className="
+              inline-flex items-center justify-center gap-1.5 rounded-lg
+              bg-sage-primary px-4 py-2 font-ui text-sm font-medium text-white
+              hover:bg-sage-deep transition-colors duration-150
+              disabled:opacity-50 disabled:cursor-not-allowed shrink-0
+            "
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" strokeWidth={2} />
+            )}
+            Grant Access
+          </button>
+        </div>
+        {error && (
+          <p className="font-ui text-xs text-red-500">{error}</p>
+        )}
+      </form>
+
+      {/* Users List */}
+      <div className="space-y-3">
+        <p className="font-ui text-xs font-semibold text-ink-muted uppercase tracking-wide">
+          Authorized Accounts
+        </p>
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-ink-muted py-4">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="font-ui text-sm">Loading users…</span>
+          </div>
+        ) : users.length === 0 ? (
+          <p className="font-ui text-sm text-ink-muted py-2">No users whitelisted. Access is currently locked down.</p>
+        ) : (
+          <div className="rounded-xl border border-surface-border bg-surface-container overflow-hidden divide-y divide-surface-border">
+            {users.map((item) => {
+              const isSelf = item.email.toLowerCase() === currentUser?.email?.toLowerCase()
+              return (
+                <div key={item.email} className="flex items-center justify-between px-4 py-3 gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-ui text-sm font-medium text-ink truncate" title={item.email}>
+                        {item.email}
+                      </span>
+                      {isSelf && (
+                        <span className="font-ui text-[10px] font-semibold text-sage-primary bg-sage-primary/10 rounded-full px-2 py-0.5">
+                          You
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {/* Role Badge */}
+                    <span
+                      className={`
+                        font-ui text-[10px] font-semibold rounded-full px-2.5 py-0.5 border
+                        ${item.role === 'admin'
+                          ? 'bg-purple-50 text-purple-700 border-purple-200'
+                          : 'bg-sage-primary/5 text-sage-primary border-sage-primary/20'
+                        }
+                      `}
+                    >
+                      {item.role === 'admin' ? 'Administrator' : 'Authorized User'}
+                    </span>
+
+                    {/* Revoke Access Button */}
+                    <button
+                      id={`btn-revoke-${item.email.replace(/[@.]/g, '-')}`}
+                      onClick={() => handleRemoveUser(item.email)}
+                      disabled={isSelf || deletingEmail === item.email}
+                      className="
+                        flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted
+                        hover:text-red-500 hover:bg-red-50 transition-all duration-150
+                        disabled:opacity-20 disabled:cursor-not-allowed
+                      "
+                      title={isSelf ? 'Cannot revoke your own access' : 'Revoke user access'}
+                      aria-label={`Revoke access for ${item.email}`}
+                    >
+                      {deletingEmail === item.email ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </section>
   )
 }

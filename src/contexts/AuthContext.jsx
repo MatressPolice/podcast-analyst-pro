@@ -6,7 +6,7 @@ import {
   signOut,
 } from 'firebase/auth'
 import { auth, googleProvider } from '../lib/firebase'
-import { isAuthorizedUser } from '../lib/authGuard'
+import { getAuthorization } from '../lib/firestore'
 
 const AuthContext = createContext(null)
 
@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
   const [user, setUser]             = useState(null)
   const [loading, setLoading]       = useState(true)
   const [authorized, setAuthorized] = useState(false)
+  const [role, setRole]             = useState(null)
 
   // Track whether getRedirectResult has resolved yet.
   // onAuthStateChanged fires immediately with null before Firebase finishes
@@ -44,9 +45,22 @@ export function AuthProvider({ children }) {
       })
 
     // 2. Keep auth state in sync for the session lifetime
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser)
-      setAuthorized(isAuthorizedUser(firebaseUser))
+      
+      if (firebaseUser && firebaseUser.email) {
+        const authDoc = await getAuthorization(firebaseUser.email)
+        if (authDoc) {
+          setAuthorized(true)
+          setRole(authDoc.role)
+        } else {
+          setAuthorized(false)
+          setRole(null)
+        }
+      } else {
+        setAuthorized(false)
+        setRole(null)
+      }
 
       authStateSettled.current = true
       evaluateLoading()
@@ -59,10 +73,11 @@ export function AuthProvider({ children }) {
   const logOut = () => signOut(auth)
 
   return (
-    <AuthContext.Provider value={{ user, authorized, loading, signIn, logOut }}>
+    <AuthContext.Provider value={{ user, authorized, role, loading, signIn, logOut }}>
       {children}
     </AuthContext.Provider>
   )
 }
+
 
 export const useAuth = () => useContext(AuthContext)
