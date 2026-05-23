@@ -73,6 +73,7 @@ const GET_PODCAST_SERIES_QUERY = `
         description
         datePublished
         audioUrl
+        duration
       }
     }
   }

@@ -14,3 +14,19 @@ export function stripHtml(htmlString) {
     return htmlString.replace(/<[^>]*>/g, '');
   }
 }
+
+/**
+ * Formats a duration in seconds to a human-readable hours and minutes string.
+ * @param {number} seconds - The duration in seconds.
+ * @returns {string} The formatted duration (e.g., '1 hr 15 min' or '45 min').
+ */
+export function formatDuration(seconds) {
+  if (!seconds || isNaN(seconds)) return '';
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  
+  if (hrs > 0) {
+    return `${hrs} hr ${mins} min`;
+  }
+  return `${mins} min`;
+}

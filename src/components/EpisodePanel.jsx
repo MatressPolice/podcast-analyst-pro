@@ -6,7 +6,7 @@ import {
 import { usePodcastEpisodes } from '../hooks/usePodcastEpisodes'
 import { useAnalysis }        from '../hooks/useAnalysis'
 import ReactMarkdown          from 'react-markdown'
-import { stripHtml }          from '../lib/utils'
+import { stripHtml, formatDuration } from '../lib/utils'
 
 // ── Main panel ────────────────────────────────────────────────────────────────
 // selectedEpisode is lifted to LibraryPage so it survives panel close/reopen.
@@ -531,7 +531,7 @@ function SageAudioPlayer({ src, title }) {
 
 // ── Episode list row ──────────────────────────────────────────────────────────
 function EpisodeRow({ episode, onReview, hasAnalysis = false }) {
-  const { uuid, name, datePublished, audioUrl } = episode
+  const { uuid, name, datePublished, audioUrl, duration } = episode
 
   return (
     <li
@@ -555,6 +555,14 @@ function EpisodeRow({ episode, onReview, hasAnalysis = false }) {
             <span className="font-ui text-[11px] text-ink-muted">
               {formatPublishedDate(datePublished)}
             </span>
+          )}
+          {duration && (
+            <>
+              <span className="text-surface-border text-xs">·</span>
+              <span className="font-ui text-[11px] text-ink-muted">
+                {formatDuration(duration)}
+              </span>
+            </>
           )}
           {audioUrl && (
             <>
