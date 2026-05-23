@@ -1,3 +1,4 @@
+// Trigger build: GitHub secrets updated
 /**
  * Strips HTML tags from a string and decodes HTML entities.
  * @param {string} htmlString - The HTML string to clean.
