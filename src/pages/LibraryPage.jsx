@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useSubscriptions } from '../hooks/useSubscriptions'
 import { removeSubscription, listenToAllAnalyses } from '../lib/firestore'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { stripHtml } from '../lib/utils'
 
 export default function LibraryPage() {
   const { user } = useAuth()
@@ -231,7 +232,7 @@ function PodcastCard({ podcast, removing, onRemove, onOpen }) {
         </h3>
         {description && (
           <p className="font-ui text-xs text-ink-muted mt-1 line-clamp-2 leading-relaxed">
-            {description}
+            {stripHtml(description)}
           </p>
         )}
 

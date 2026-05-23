@@ -7,6 +7,7 @@ import { usePodcastSearch } from '../hooks/usePodcastSearch'
 import { useSubscriptions } from '../hooks/useSubscriptions'
 import { addSubscription } from '../lib/firestore'
 import { useAuth } from '../contexts/AuthContext'
+import { stripHtml } from '../lib/utils'
 
 export default function DiscoverPage() {
   const { user }  = useAuth()
@@ -240,7 +241,7 @@ function PodcastResultCard({ podcast, alreadySaved, user }) {
         {/* Description — Work Sans, single line truncated */}
         {description && (
           <p className="font-ui text-xs text-ink-muted leading-relaxed line-clamp-2">
-            {description}
+            {stripHtml(description)}
           </p>
         )}
 

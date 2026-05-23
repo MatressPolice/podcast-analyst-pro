@@ -6,6 +6,7 @@ import {
 import { usePodcastEpisodes } from '../hooks/usePodcastEpisodes'
 import { useAnalysis }        from '../hooks/useAnalysis'
 import ReactMarkdown          from 'react-markdown'
+import { stripHtml }          from '../lib/utils'
 
 // ── Main panel ────────────────────────────────────────────────────────────────
 // selectedEpisode is lifted to LibraryPage so it survives panel close/reopen.
@@ -139,7 +140,7 @@ function EpisodeListView({ podcast, episodes, loading, error, onSelectEpisode, a
             </h2>
             {podcast.description && (
               <p className="font-ui text-xs text-ink-muted mt-1 line-clamp-2 leading-relaxed">
-                {podcast.description}
+                {stripHtml(podcast.description)}
               </p>
             )}
           </div>
