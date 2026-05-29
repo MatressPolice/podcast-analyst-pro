@@ -352,9 +352,16 @@ function BriefContent({ text }) {
           )
         }
         // Bold inline (**text**)
-        const boldified = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        const parts = line.split(/(\*\*.*?\*\*)/g)
         return (
-          <p key={i} dangerouslySetInnerHTML={{ __html: boldified }} />
+          <p key={i}>
+            {parts.map((part, j) => {
+              if (j % 2 === 1) {
+                return <strong key={j}>{part.slice(2, -2)}</strong>
+              }
+              return part
+            })}
+          </p>
         )
       })}
     </div>
