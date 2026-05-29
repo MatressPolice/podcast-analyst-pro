@@ -1,38 +1,15 @@
-// AssemblyAI transcription client — Task 4.1
-// Docs: https://www.assemblyai.com/docs/api-reference
-const BASE_URL = 'https://api.assemblyai.com/v2'
-
-function headers() {
-  return {
-    'Authorization': import.meta.env.VITE_ASSEMBLY_AI_API_KEY,
-    'Content-Type':  'application/json',
-  }
-}
+import { httpsCallable } from 'firebase/functions'
+import { functions } from './firebase'
 
 /**
- * Submit an audio URL to AssemblyAI for transcription.
+ * Submit an audio URL to AssemblyAI for transcription via Firebase Functions.
  * @param {string} audioUrl - Public audio stream URL
  * @returns {Promise<string>} The AssemblyAI transcript ID
  */
 export async function submitTranscription(audioUrl) {
-  const res = await fetch(`${BASE_URL}/transcript`, {
-    method:  'POST',
-    headers: headers(),
-    body:    JSON.stringify({
-      audio_url:          audioUrl,
-      language_detection: true,   // auto-detect podcast language
-      speech_models:      ['universal-3-pro'],
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`AssemblyAI submit failed (${res.status}): ${body}`)
-  }
-
-  const json = await res.json()
-  if (!json.id) throw new Error('AssemblyAI did not return a transcript ID')
-  return json.id
+  const submitFn = httpsCallable(functions, 'submitTranscription')
+  const result = await submitFn({ audioUrl })
+  return result.data.id
 }
 
 /**
@@ -46,6 +23,7 @@ export async function submitTranscription(audioUrl) {
 export async function pollTranscription(jobId, signal) {
   const POLL_INTERVAL_MS = 5_000  // 5 s between polls
   const MAX_POLLS        = 120    // max 10 min before timing out
+  const pollFn = httpsCallable(functions, 'pollTranscription')
 
   for (let i = 0; i < MAX_POLLS; i++) {
     // Honour cancellation before each sleep and after
@@ -55,22 +33,15 @@ export async function pollTranscription(jobId, signal) {
 
     if (signal?.aborted) throw new DOMException('Polling aborted', 'AbortError')
 
-    const res = await fetch(`${BASE_URL}/transcript/${jobId}`, {
-      headers: headers(),
-    })
+    const result = await pollFn({ jobId })
+    const data = result.data
 
-    if (!res.ok) {
-      throw new Error(`AssemblyAI poll failed (${res.status})`)
+    if (data.status === 'completed') {
+      return data.text ?? ''
     }
 
-    const json = await res.json()
-
-    if (json.status === 'completed') {
-      return json.text ?? ''
-    }
-
-    if (json.status === 'error') {
-      throw new Error(json.error ?? 'AssemblyAI transcription error')
+    if (data.status === 'error') {
+      throw new Error(data.error ?? 'AssemblyAI transcription error')
     }
 
     // 'queued' or 'processing' — keep polling
