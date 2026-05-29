@@ -32,6 +32,9 @@ export const DEFAULT_PROMPT = {
   isActive: true,
 }
 
+// In-memory cache for getActivePrompt
+const activePromptCache = new Map()
+
 /**
  * Returns a reference to the user's subscriptions sub-collection.
  * @param {string} uid - Firebase Auth UID
@@ -234,6 +237,7 @@ export function listenToPrompts(uid, callback) {
  * @param {string} uid
  */
 export async function seedDefaultPrompt(uid) {
+  activePromptCache.delete(uid)
   await addDoc(promptsRef(uid), {
     ...DEFAULT_PROMPT,
     createdAt: serverTimestamp(),
@@ -250,6 +254,7 @@ export async function seedDefaultPrompt(uid) {
  * @returns {string} new document ID
  */
 export async function addPrompt(uid, prompt) {
+  activePromptCache.delete(uid)
   const ref = await addDoc(promptsRef(uid), {
     name: prompt.name,
     text: prompt.text,
@@ -268,6 +273,7 @@ export async function addPrompt(uid, prompt) {
  * @param {object} fields
  */
 export async function updatePrompt(uid, promptId, fields) {
+  activePromptCache.delete(uid)
   await updateDoc(doc(promptsRef(uid), promptId), {
     ...fields,
     updatedAt: serverTimestamp(),
@@ -281,6 +287,7 @@ export async function updatePrompt(uid, promptId, fields) {
  * @param {string} promptId
  */
 export async function deletePrompt(uid, promptId) {
+  activePromptCache.delete(uid)
   await deleteDoc(doc(promptsRef(uid), promptId))
 }
 
@@ -293,6 +300,7 @@ export async function deletePrompt(uid, promptId) {
  * @param {string[]} allPromptIds
  */
 export async function setActivePrompt(uid, activePromptId, allPromptIds) {
+  activePromptCache.delete(uid)
   const batch = writeBatch(db)
 
   allPromptIds.forEach((id) => {
@@ -317,13 +325,19 @@ export async function setActivePrompt(uid, activePromptId, allPromptIds) {
  * @returns {Promise<string>} prompt text
  */
 export async function getActivePrompt(uid) {
+  if (activePromptCache.has(uid)) {
+    return activePromptCache.get(uid)
+  }
+
   try {
     // Try to find the explicitly active prompt first
     const activeQ = query(promptsRef(uid), where('isActive', '==', true), limit(1))
     const activeSnap = await getDocs(activeQ)
 
     if (!activeSnap.empty) {
-      return activeSnap.docs[0].data().text
+      const text = activeSnap.docs[0].data().text
+      activePromptCache.set(uid, text)
+      return text
     }
 
     // No active prompt — try to return the first one in the collection
@@ -331,10 +345,13 @@ export async function getActivePrompt(uid) {
     const allSnap = await getDocs(allQ)
 
     if (!allSnap.empty) {
-      return allSnap.docs[0].data().text
+      const text = allSnap.docs[0].data().text
+      activePromptCache.set(uid, text)
+      return text
     }
 
     // Empty collection — use the built-in default
+    activePromptCache.set(uid, DEFAULT_PROMPT.text)
     return DEFAULT_PROMPT.text
   } catch (err) {
     console.warn('[Firestore] getActivePrompt fallback to default:', err)
