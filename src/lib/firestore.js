@@ -18,6 +18,7 @@ import {
   orderBy,
   where,
   limit,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -292,14 +293,16 @@ export async function deletePrompt(uid, promptId) {
  * @param {string[]} allPromptIds
  */
 export async function setActivePrompt(uid, activePromptId, allPromptIds) {
-  await Promise.all(
-    allPromptIds.map((id) =>
-      updateDoc(doc(promptsRef(uid), id), {
-        isActive: id === activePromptId,
-        updatedAt: serverTimestamp(),
-      })
-    )
-  )
+  const batch = writeBatch(db)
+
+  allPromptIds.forEach((id) => {
+    batch.update(doc(promptsRef(uid), id), {
+      isActive: id === activePromptId,
+      updatedAt: serverTimestamp(),
+    })
+  })
+
+  await batch.commit()
 }
 
 /**
