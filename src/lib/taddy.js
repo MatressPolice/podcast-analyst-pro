@@ -1,52 +1,8 @@
+import { httpsCallable } from 'firebase/functions';
+import { functions } from './firebase';
+
 // Taddy GraphQL client — Task 2.3 / 3.1
-// Docs: https://taddy.org/developers/podcast-api
-const TADDY_ENDPOINT = 'https://api.taddy.org'
-
-// ── Shared fetch helper ───────────────────────────────────────────────────────
-async function taddyRequest(query, variables = {}) {
-  const response = await fetch(TADDY_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-USER-ID':    import.meta.env.VITE_TADDY_USER_ID,
-      'X-API-KEY':    import.meta.env.VITE_TADDY_API_KEY,
-    },
-    body: JSON.stringify({ query, variables }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Taddy responded with ${response.status}: ${response.statusText}`)
-  }
-
-  const json = await response.json()
-
-  if (json.errors?.length) {
-    throw new Error(json.errors[0].message ?? 'GraphQL error from Taddy')
-  }
-
-  return json.data
-}
-
-// ── Search ────────────────────────────────────────────────────────────────────
-const SEARCH_QUERY = `
-  query SearchPodcasts($term: String!, $page: Int, $limitPerPage: Int) {
-    searchForTerm(
-      term: $term
-      page: $page
-      limitPerPage: $limitPerPage
-      filterForTypes: PODCASTSERIES
-    ) {
-      searchId
-      podcastSeries {
-        uuid
-        name
-        description
-        imageUrl
-        itunesId
-      }
-    }
-  }
-`
+// Moved to Cloud Functions to keep API keys secure
 
 /**
  * Search Taddy for podcast series matching the given term.
@@ -55,29 +11,15 @@ const SEARCH_QUERY = `
  * @returns {Promise<Array>} Array of podcast series objects
  */
 export async function searchPodcasts(term, limit = 20) {
-  const data = await taddyRequest(SEARCH_QUERY, { term, page: 1, limitPerPage: limit })
-  return data?.searchForTerm?.podcastSeries ?? []
-}
-
-// ── Episode Browser ───────────────────────────────────────────────────────────
-const GET_PODCAST_SERIES_QUERY = `
-  query GetPodcastSeries($uuid: ID!, $limitPerPage: Int) {
-    getPodcastSeries(uuid: $uuid) {
-      uuid
-      name
-      description
-      imageUrl
-      episodes(page: 1, limitPerPage: $limitPerPage) {
-        uuid
-        name
-        description
-        datePublished
-        audioUrl
-        duration
-      }
-    }
+  const searchPodcastsFn = httpsCallable(functions, 'searchPodcasts');
+  try {
+    const result = await searchPodcastsFn({ term, limit });
+    return result.data;
+  } catch (error) {
+    console.error('Error searching podcasts via Cloud Function:', error);
+    throw new Error(error.message || 'Error searching podcasts');
   }
-`
+}
 
 /**
  * Fetch a podcast series with its most recent episodes.
@@ -88,9 +30,12 @@ const GET_PODCAST_SERIES_QUERY = `
  * @returns {Promise<object|null>} Series object with nested episodes array
  */
 export async function getPodcastSeries(podcastUuid, limit = 25) {
-  const data = await taddyRequest(GET_PODCAST_SERIES_QUERY, {
-    uuid: podcastUuid,
-    limitPerPage: limit,
-  })
-  return data?.getPodcastSeries ?? null
+  const getPodcastSeriesFn = httpsCallable(functions, 'getPodcastSeries');
+  try {
+    const result = await getPodcastSeriesFn({ podcastUuid, limit });
+    return result.data;
+  } catch (error) {
+    console.error('Error fetching podcast series via Cloud Function:', error);
+    throw new Error(error.message || 'Error fetching podcast series');
+  }
 }
