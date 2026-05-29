@@ -352,14 +352,15 @@ function BriefContent({ text }) {
           )
         }
         // Bold inline (**text**)
-        const parts = line.split(/(\*\*.*?\*\*)/g)
-        return (
-          <p key={i}>
-            {parts.map((part, j) => {
-              if (j % 2 === 1) {
-                return <strong key={j}>{part.slice(2, -2)}</strong>
-              }
-              return part
+// Split text by ** to safely render bold text
+        const parts = line.split(/(\*\*.*?\*\*)/g)
+        return (
+          <p key={i}>
+            {parts.map((part, index) => {
+              if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+                return <strong key={index}>{part.slice(2, -2)}</strong>
+              }
+              return <span key={index}>{part}</span>
             })}
           </p>
         )

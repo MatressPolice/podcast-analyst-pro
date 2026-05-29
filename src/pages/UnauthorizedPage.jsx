@@ -1,4 +1,4 @@
-import { Mic2, AlertTriangle, LogOut } from 'lucide-react'
+import { AlertTriangle, LogOut } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function UnauthorizedPage() {

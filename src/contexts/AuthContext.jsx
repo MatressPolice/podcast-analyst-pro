@@ -33,7 +33,6 @@ export function AuthProvider({ children }) {
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          console.log('[Auth] Redirect resolved for:', result.user?.uid)
         }
       })
       .catch((err) => {

@@ -26,7 +26,6 @@ ${transcriptText}
 `;
 
   const modelId = 'gemini-3-flash-preview';
-  console.log('Attempting Gemini call with:', modelId);
 
   const response = await ai.models.generateContent({
     model: modelId,
