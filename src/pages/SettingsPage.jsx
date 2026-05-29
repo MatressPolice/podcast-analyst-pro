@@ -13,7 +13,6 @@ import {
   updatePrompt,
   deletePrompt,
   setActivePrompt,
-  DEFAULT_PROMPT,
   listenToLogs,
   listenToAuthorizedUsers,
   addAuthorizedUser,
