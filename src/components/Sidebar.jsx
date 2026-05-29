@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  Mic2, Library, Search, BookMarked, Settings, LogOut, Archive,
+  Mic2, Library, Search, Settings, LogOut, Archive,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
