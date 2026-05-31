@@ -1,43 +1,22 @@
 // AssemblyAI transcription client — Task 4.1
-// Docs: https://www.assemblyai.com/docs/api-reference
-const BASE_URL = 'https://api.assemblyai.com/v2'
-
-function headers() {
-  return {
-    'Authorization': import.meta.env.VITE_ASSEMBLY_AI_API_KEY,
-    'Content-Type':  'application/json',
-  }
-}
+import { httpsCallable } from 'firebase/functions';
+import { functions } from './firebase.js';
 
 /**
- * Submit an audio URL to AssemblyAI for transcription.
+ * Submit an audio URL to AssemblyAI for transcription via Cloud Function.
  * @param {string} audioUrl - Public audio stream URL
  * @returns {Promise<string>} The AssemblyAI transcript ID
  */
 export async function submitTranscription(audioUrl) {
-  const res = await fetch(`${BASE_URL}/transcript`, {
-    method:  'POST',
-    headers: headers(),
-    body:    JSON.stringify({
-      audio_url:          audioUrl,
-      language_detection: true,   // auto-detect podcast language
-      speech_models:      ['universal-3-pro'],
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`AssemblyAI submit failed (${res.status}): ${body}`)
-  }
-
-  const json = await res.json()
-  if (!json.id) throw new Error('AssemblyAI did not return a transcript ID')
-  return json.id
+  const assemblySubmitTranscriptionFn = httpsCallable(functions, 'assemblySubmitTranscription');
+  const response = await assemblySubmitTranscriptionFn({ audioUrl });
+  return response.data;
 }
 
 /**
  * Poll an AssemblyAI transcript until it is completed or errors out.
  * Uses recursive setTimeout so the caller can abort via AbortSignal.
+ * Now polls via a Cloud Function instead of direct API.
  *
  * @param {string} jobId          - AssemblyAI transcript ID
  * @param {AbortSignal} [signal]  - Optional abort signal for cleanup
@@ -46,6 +25,7 @@ export async function submitTranscription(audioUrl) {
 export async function pollTranscription(jobId, signal) {
   const POLL_INTERVAL_MS = 5_000  // 5 s between polls
   const MAX_POLLS        = 120    // max 10 min before timing out
+  const assemblyPollTranscriptionFn = httpsCallable(functions, 'assemblyPollTranscription');
 
   for (let i = 0; i < MAX_POLLS; i++) {
     // Honour cancellation before each sleep and after
@@ -55,15 +35,8 @@ export async function pollTranscription(jobId, signal) {
 
     if (signal?.aborted) throw new DOMException('Polling aborted', 'AbortError')
 
-    const res = await fetch(`${BASE_URL}/transcript/${jobId}`, {
-      headers: headers(),
-    })
-
-    if (!res.ok) {
-      throw new Error(`AssemblyAI poll failed (${res.status})`)
-    }
-
-    const json = await res.json()
+    const response = await assemblyPollTranscriptionFn({ jobId });
+    const json = response.data;
 
     if (json.status === 'completed') {
       return json.text ?? ''
