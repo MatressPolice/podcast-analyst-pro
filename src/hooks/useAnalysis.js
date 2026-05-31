@@ -133,6 +133,15 @@ export function useAnalysis(episodeUuid, uid) {
     if (analysis?.status === 'queued' || analysis?.status === 'processing') return
 
     try {
+      if (analysis?.transcriptText) {
+        // Smart Retry: skip AssemblyAI, go straight to Gemini analysis
+        await updateAnalysis(uid, episodeUuid, {
+          status: 'completed',
+          error: null // clear previous errors
+        })
+        return
+      }
+
       // 1. Create/reset the Firestore doc → status: 'queued'
       await createAnalysis(uid, episodeUuid, {
         episodeName,

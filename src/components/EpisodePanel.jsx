@@ -304,7 +304,9 @@ function AnalysisView({ episode, podcast, user, onBack }) {
           {!inFlight && !isAnalyzed && (
             <p className="font-ui text-[11px] text-ink-muted mt-2 text-center">
               {isError
-                ? (analysis?.error ?? 'Something went wrong. Try again.')
+                ? (analysis?.transcriptText 
+                    ? 'Transcription completed successfully. Intelligence Brief generation failed.' 
+                    : (analysis?.error ?? 'Something went wrong. Try again.'))
                 : noAudio
                 ? 'Audio stream required for transcription.'
                 : 'AI-powered transcript + editorial intelligence brief'
@@ -333,7 +335,7 @@ function AnalysisView({ episode, podcast, user, onBack }) {
             <h3 className="font-ui text-xs font-semibold text-ink-secondary uppercase tracking-wide">
               Transcript
             </h3>
-            {(isAnalyzed || isCompleted) && (
+            {analysis?.transcriptText && (
               <span className="ml-auto font-ui text-[10px] text-sage-primary/80 bg-sage-primary/10 rounded-full px-2 py-0.5">
                 Complete
               </span>
@@ -353,7 +355,7 @@ function AnalysisView({ episode, podcast, user, onBack }) {
             "
             style={{ minHeight: '10rem', maxHeight: '24rem' }}
           >
-            {(isAnalyzed || isCompleted) && analysis?.transcriptText ? (
+            {analysis?.transcriptText ? (
               <p className="whitespace-pre-wrap">{analysis.transcriptText}</p>
             ) : isProcessing || isQueued ? (
               <div className="space-y-2 pt-2">
