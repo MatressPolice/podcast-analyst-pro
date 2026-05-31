@@ -59,10 +59,10 @@ export function useAnalysis(episodeUuid, uid) {
       .catch(async (err) => {
         if (!controller.signal.aborted) {
           console.error('[Analysis] Poll failed:', err)
-          writeLog(uid, 'AssemblyAI', err.message)
+          writeLog(uid, 'AssemblyAI', 'Transcription poll failed due to an internal error.')
           await updateAnalysis(uid, episodeUuid, {
             status: 'error',
-            error:  err.message,
+            error:  'Transcription failed',
           })
         }
       })
@@ -97,11 +97,11 @@ export function useAnalysis(episodeUuid, uid) {
       })
       .catch(async (err) => {
         console.error('[Gemini] Analysis failed:', err)
-        writeLog(uid, 'Gemini', err.message)
+        writeLog(uid, 'Gemini', 'AI analysis failed due to an internal error.')
         // Keep state machine simple — go to error so user can retry.
         await updateAnalysis(uid, episodeUuid, {
           status: 'error',
-          error:  `AI Analysis failed: ${err.message}`,
+          error:  'AI Analysis failed',
         })
       })
       .finally(() => {
@@ -156,10 +156,10 @@ export function useAnalysis(episodeUuid, uid) {
       // Polling starts automatically via the useEffect above
     } catch (err) {
       console.error('[Analysis] Begin failed:', err)
-      writeLog(uid, 'AssemblyAI', `Begin failed: ${err.message}`)
+      writeLog(uid, 'AssemblyAI', 'Begin transcription failed due to an internal error.')
       await updateAnalysis(uid, episodeUuid, {
         status: 'error',
-        error:  err.message,
+        error:  'Failed to start transcription',
       }).catch(() => {}) // best-effort — original error is more important
     }
   }

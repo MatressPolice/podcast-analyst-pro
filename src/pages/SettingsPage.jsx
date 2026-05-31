@@ -636,7 +636,7 @@ function UsersTab() {
       setRoleInput('authorized_user')
     } catch (err) {
       console.error('[UsersTab] Add user failed:', err)
-      setError('Failed to authorize user: ' + err.message)
+      setError('Failed to authorize user due to an internal error.')
     } finally {
       setSaving(false)
     }
@@ -654,7 +654,7 @@ function UsersTab() {
       await removeAuthorizedUser(email)
     } catch (err) {
       console.error('[UsersTab] Remove user failed:', err)
-      window.alert('Failed to remove user: ' + err.message)
+      window.alert('Failed to remove user due to an internal error.')
     } finally {
       setDeletingEmail(null)
     }

@@ -97,7 +97,6 @@ export function listenToSubscriptions(uid, callback) {
     },
     (err) => {
       console.error('[Firestore] Subscription listener error:', err)
-      window.alert('[Firestore] Subscription listener error: ' + err.message)
       callback([])
     }
   )
@@ -163,7 +162,6 @@ export function listenToAnalysis(uid, episodeUuid, callback) {
     (snap) => callback(snap.exists() ? snap.data() : null),
     (err) => {
       console.error('[Firestore] Analysis listener error:', err)
-      window.alert('[Firestore] Analysis listener error: ' + err.message)
       callback(null)
     }
   )
@@ -192,7 +190,6 @@ export function listenToAllAnalyses(uid, callback) {
     },
     (err) => {
       console.error('[Firestore] All Analyses listener error:', err)
-      window.alert('[Firestore] All Analyses listener error: ' + err.message)
       callback([])
     }
   )
@@ -224,7 +221,6 @@ export function listenToPrompts(uid, callback) {
     },
     (err) => {
       console.error('[Firestore] Prompts listener error:', err)
-      window.alert('[Firestore] Prompts listener error: ' + err.message)
       callback([])
     }
   )
@@ -405,7 +401,6 @@ export function listenToLogs(uid, callback) {
     },
     (err) => {
       console.error('[Firestore] Logs listener error:', err)
-      window.alert('[Firestore] Logs listener error: ' + err.message)
       callback([])
     }
   )
@@ -452,7 +447,6 @@ export function listenToAuthorizedUsers(callback) {
     },
     (err) => {
       console.error('[Firestore] Authorized users listener error:', err)
-      window.alert('[Firestore] Authorized users listener error: ' + err.message)
       callback([])
     }
   )
