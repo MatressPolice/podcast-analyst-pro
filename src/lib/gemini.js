@@ -1,36 +1,21 @@
-import { GoogleGenAI } from '@google/genai';
-
-const ai = new GoogleGenAI({
-  apiKey: import.meta.env.VITE_GOOGLE_AI_STUDIO_API_KEY,
-  httpOptions: { apiVersion: 'v1beta' },
-});
-
-const FALLBACK_SYSTEM_PROMPT = `You are Sage, a critical analyst. Evaluate this transcript for weak logic, lazy assumptions, or unearned conclusions. Provide two distinct sections: "Key Takeaways" and "Critical Gaps". Keep the tone sharp, professional, and intellectually rigorous.`
+import { httpsCallable } from 'firebase/functions';
+import { functions } from './firebase.js';
 
 /**
- * Generate an intelligence brief from a transcript.
+ * Generate an intelligence brief from a transcript using the Firebase Cloud Function.
  *
  * @param {string} transcriptText   - The full episode transcript.
  * @param {string} [systemPrompt]   - Optional system instructions from the user's
- *                                    active Prompt Laboratory selection. Falls back
- *                                    to the built-in Editorial Sage prompt.
+ *                                    active Prompt Laboratory selection.
  * @returns {Promise<string>} markdown-formatted brief
  */
 export async function generateIntelligenceBrief(transcriptText, systemPrompt) {
-  const instructions = systemPrompt?.trim() || FALLBACK_SYSTEM_PROMPT
+  const analyzeTranscript = httpsCallable(functions, 'analyzeTranscript');
 
-  const prompt = `${instructions}
-
-Transcript:
-${transcriptText}
-`;
-
-  const modelId = 'gemini-3-flash-preview';
-
-  const response = await ai.models.generateContent({
-    model: modelId,
-    contents: prompt,
+  const response = await analyzeTranscript({
+    transcriptText,
+    systemPrompt,
   });
 
-  return response.text;
+  return response.data;
 }
