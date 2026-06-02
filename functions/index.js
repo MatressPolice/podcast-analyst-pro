@@ -10,7 +10,7 @@ const ASSEMBLY_AI_API_KEY = defineSecret("ASSEMBLY_AI_API_KEY");
 const FALLBACK_SYSTEM_PROMPT = `You are Sage, a critical analyst. Evaluate this transcript for weak logic, lazy assumptions, or unearned conclusions. Provide two distinct sections: "Key Takeaways" and "Critical Gaps". Keep the tone sharp, professional, and intellectually rigorous.`
 
 exports.analyzeTranscript = onCall(
-  { secrets: [GOOGLE_AI_STUDIO_API_KEY] },
+  { secrets: [GOOGLE_AI_STUDIO_API_KEY], invoker: 'public' },
   async (request) => {
     const transcriptText = request.data.transcriptText;
     const systemPrompt = request.data.systemPrompt;
@@ -26,7 +26,7 @@ exports.analyzeTranscript = onCall(
 
     const instructions = systemPrompt?.trim() || FALLBACK_SYSTEM_PROMPT;
     const prompt = `${instructions}\n\nTranscript:\n${transcriptText}\n`;
-    const modelId = 'gemini-3-flash-preview';
+    const modelId = 'gemini-3.5-flash';
 
     const response = await ai.models.generateContent({
       model: modelId,
@@ -65,7 +65,7 @@ async function taddyRequest(query, variables, userId, apiKey) {
 }
 
 exports.taddySearchPodcasts = onCall(
-  { secrets: [TADDY_USER_ID, TADDY_API_KEY] },
+  { secrets: [TADDY_USER_ID, TADDY_API_KEY], invoker: 'public' },
   async (request) => {
     const { term, limit = 20 } = request.data;
     if (!term) throw new Error("The 'term' parameter is required.");
@@ -102,7 +102,7 @@ exports.taddySearchPodcasts = onCall(
 );
 
 exports.taddyGetPodcastSeries = onCall(
-  { secrets: [TADDY_USER_ID, TADDY_API_KEY] },
+  { secrets: [TADDY_USER_ID, TADDY_API_KEY], invoker: 'public' },
   async (request) => {
     const { uuid, limit = 25 } = request.data;
     if (!uuid) throw new Error("The 'uuid' parameter is required.");
@@ -141,7 +141,7 @@ exports.taddyGetPodcastSeries = onCall(
 const ASSEMBLY_BASE_URL = 'https://api.assemblyai.com/v2';
 
 exports.assemblySubmitTranscription = onCall(
-  { secrets: [ASSEMBLY_AI_API_KEY] },
+  { secrets: [ASSEMBLY_AI_API_KEY], invoker: 'public' },
   async (request) => {
     const { audioUrl } = request.data;
     if (!audioUrl) throw new Error("The 'audioUrl' parameter is required.");
@@ -155,7 +155,7 @@ exports.assemblySubmitTranscription = onCall(
       body: JSON.stringify({
         audio_url: audioUrl,
         language_detection: true,
-        speech_models: ['universal-3-pro'],
+        speech_model: 'universal-3-pro',
       }),
     });
 
@@ -171,7 +171,7 @@ exports.assemblySubmitTranscription = onCall(
 );
 
 exports.assemblyPollTranscription = onCall(
-  { secrets: [ASSEMBLY_AI_API_KEY] },
+  { secrets: [ASSEMBLY_AI_API_KEY], invoker: 'public' },
   async (request) => {
     const { jobId } = request.data;
     if (!jobId) throw new Error("The 'jobId' parameter is required.");

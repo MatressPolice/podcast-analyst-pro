@@ -1,5 +1,7 @@
 {
-  "projects": {},
+  "projects": {
+    "default": "podcast-analyst-pro"
+  },
   "targets": {},
   "etags": {}
 }
