@@ -155,7 +155,7 @@ exports.assemblySubmitTranscription = onCall(
       body: JSON.stringify({
         audio_url: audioUrl,
         language_detection: true,
-        speech_model: 'universal-3-pro',
+        speech_models: ['universal-3-pro', 'universal-2'],
       }),
     });
 
