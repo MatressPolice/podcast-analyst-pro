@@ -86,7 +86,7 @@ export function useAnalysis(episodeUuid, uid) {
 
     geminiRef.current = true
 
-    // Fetch the user's active prompt first, with graceful fallback to Editorial Sage
+    // Fetch the user's active prompt first, with graceful fallback to Default Prompt
     getActivePrompt(uid)
       .then((systemPrompt) => generateIntelligenceBrief(analysis.transcriptText, systemPrompt))
       .then(async (brief) => {

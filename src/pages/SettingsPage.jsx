@@ -535,7 +535,7 @@ function PromptEditor({ title, draftName, draftText, onDraftName, onDraftText, o
             type="text"
             value={draftName}
             onChange={(e) => onDraftName(e.target.value)}
-            placeholder="e.g. Editorial Sage"
+            placeholder="e.g. Default Prompt"
             maxLength={60}
             className="
               w-full rounded-lg border border-surface-border bg-surface-cream

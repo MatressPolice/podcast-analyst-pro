@@ -25,10 +25,10 @@ import { db } from './firebase'
 // We use the project ID to maintain clean URLs for the unified "artifacts" root
 const APP_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'podcast-analyst-pro'
 
-// ── Editorial Sage — the built-in fallback prompt ─────────────────────────────
+// ── Default Prompt — the built-in fallback prompt ─────────────────────────────
 export const DEFAULT_PROMPT = {
-  name: 'Editorial Sage',
-  text: `You are Sage, a critical analyst. Evaluate this transcript for weak logic, lazy assumptions, or unearned conclusions. Provide two distinct sections: "Key Takeaways" and "Critical Gaps". Keep the tone sharp, professional, and intellectually rigorous.`,
+  name: 'Default Prompt',
+  text: `You are a neutral intelligence analyst. Provide an unbiased overview of this podcast episode. Your task is to explain the primary subject matter and arguments clearly without passing judgment or analyzing the validity of the speakers' conclusions. Provide two distinct sections: "Executive Summary" and "Detailed Breakdown". Use clean bullet points and maintain an objective, balanced tone.`,
   isActive: true,
 }
 
@@ -227,7 +227,7 @@ export function listenToPrompts(uid, callback) {
 }
 
 /**
- * Seed the prompts collection with the built-in Editorial Sage default.
+ * Seed the prompts collection with the built-in default prompt.
  * Only called when the collection is empty.
  *
  * @param {string} uid
