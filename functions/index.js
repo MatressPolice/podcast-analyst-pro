@@ -1,4 +1,4 @@
-const { onCall } = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const { GoogleGenAI } = require("@google/genai");
 
@@ -12,6 +12,10 @@ const FALLBACK_SYSTEM_PROMPT = `You are Sage, a critical analyst. Evaluate this 
 exports.analyzeTranscript = onCall(
   { secrets: [GOOGLE_AI_STUDIO_API_KEY], invoker: 'public' },
   async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated.");
+    }
+
     const transcriptText = request.data.transcriptText;
     const systemPrompt = request.data.systemPrompt;
 
@@ -67,6 +71,10 @@ async function taddyRequest(query, variables, userId, apiKey) {
 exports.taddySearchPodcasts = onCall(
   { secrets: [TADDY_USER_ID, TADDY_API_KEY], invoker: 'public' },
   async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated.");
+    }
+
     const { term, limit = 20 } = request.data;
     if (!term) throw new Error("The 'term' parameter is required.");
 
@@ -104,6 +112,10 @@ exports.taddySearchPodcasts = onCall(
 exports.taddyGetPodcastSeries = onCall(
   { secrets: [TADDY_USER_ID, TADDY_API_KEY], invoker: 'public' },
   async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated.");
+    }
+
     const { uuid, limit = 25 } = request.data;
     if (!uuid) throw new Error("The 'uuid' parameter is required.");
 
@@ -143,6 +155,10 @@ const ASSEMBLY_BASE_URL = 'https://api.assemblyai.com/v2';
 exports.assemblySubmitTranscription = onCall(
   { secrets: [ASSEMBLY_AI_API_KEY], invoker: 'public' },
   async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated.");
+    }
+
     const { audioUrl } = request.data;
     if (!audioUrl) throw new Error("The 'audioUrl' parameter is required.");
 
@@ -173,6 +189,10 @@ exports.assemblySubmitTranscription = onCall(
 exports.assemblyPollTranscription = onCall(
   { secrets: [ASSEMBLY_AI_API_KEY], invoker: 'public' },
   async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "User must be authenticated.");
+    }
+
     const { jobId } = request.data;
     if (!jobId) throw new Error("The 'jobId' parameter is required.");
 
